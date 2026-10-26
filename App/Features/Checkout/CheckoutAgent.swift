@@ -46,7 +46,7 @@ enum CheckoutScripts {
       function findApply(input) {
         const scope = input.closest('form') || input.parentElement?.parentElement?.parentElement || document;
         const buttons = Array.from(scope.querySelectorAll('button, input[type="submit"], input[type="button"], [role="button"]'));
-        return buttons.find(b => visible(b) && APPLY_HINT.test(((b.innerText || b.value || '') + '').trim())) || buttons.find(b => visible(b)) || null;
+        return buttons.find(b => visible(b) && APPLY_HINT.test((textOf(b) || b.value || '').trim())) || buttons.find(b => visible(b)) || null;
       }
       function parseMoney(text) {
         const m = (text || '').match(MONEY);
@@ -56,17 +56,18 @@ enum CheckoutScripts {
       }
       function readTotal() {
         const nodes = Array.from(document.querySelectorAll('div, span, p, td, th, dt, dd, li, strong, b'))
-          .filter(e => e.children.length <= 4 && visible(e) && TOTAL_HINT.test((e.innerText || '').trim().split('\n')[0]));
+          .filter(e => e.children.length <= 4 && visible(e) && TOTAL_HINT.test(textOf(e).trim().split('\n')[0]));
         let best = null;
         for (const n of nodes) {
-          let v = parseMoney(n.innerText);
-          if (v == null && n.nextElementSibling) { v = parseMoney(n.nextElementSibling.innerText); }
-          if (v == null && n.parentElement) { v = parseMoney(n.parentElement.innerText); }
+          let v = parseMoney(textOf(n));
+          if (v == null && n.nextElementSibling) { v = parseMoney(textOf(n.nextElementSibling)); }
+          if (v == null && n.parentElement) { v = parseMoney(textOf(n.parentElement)); }
           if (v != null) { best = v; }
         }
         return best;
       }
       function wait(ms) { return new Promise(r => setTimeout(r, ms)); }
+      function textOf(el) { return el ? (el.innerText || el.textContent || '') : ''; }
 
       async function tryCodes(codes) {
         let input = findCodeInput();
@@ -81,7 +82,7 @@ enum CheckoutScripts {
           if (apply) { apply.click(); } else { input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })); }
           await wait(2600);
           const after = readTotal();
-          const error = /(invalid|not valid|expired|doesn.t exist|not recognised|not recognized|cannot be applied|isn.t valid)/i.test(document.body.innerText.slice(0, 200000));
+          const error = /(invalid|not valid|expired|doesn.t exist|not recognised|not recognized|cannot be applied|isn.t valid)/i.test(textOf(document.body).slice(0, 200000));
           results.push({ code: code, total: after, saving: (before != null && after != null) ? Math.max(0, before - after) : null, error: error });
           window.webkit.messageHandlers.snag.postMessage({ type: 'progress', code: code, total: after, before: before });
         }
@@ -98,7 +99,7 @@ enum CheckoutScripts {
 
       function scanForCodes() {
         // On discount-scheme pages, pick up revealed codes so they can be reused.
-        const text = document.body ? document.body.innerText : '';
+        const text = textOf(document.body);
         const near = text.match(/(?:code|voucher|coupon)[^A-Z0-9]{0,40}([A-Z0-9][A-Z0-9-]{4,24})/g) || [];
         const codes = near.map(s => (s.match(/([A-Z0-9][A-Z0-9-]{4,24})$/) || [])[1]).filter(Boolean);
         return Array.from(new Set(codes)).slice(0, 5);
