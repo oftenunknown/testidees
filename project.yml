@@ -1,0 +1,101 @@
+# XcodeGen spec. Generate the Xcode project with:  xcodegen generate
+name: Snag
+options:
+  bundleIdPrefix: com.oftenunknown
+  deploymentTarget:
+    iOS: "27.0"
+  xcodeVersion: "27.1"
+  createIntermediateGroups: true
+  developmentLanguage: en
+
+settings:
+  base:
+    MARKETING_VERSION: "1.0.0"
+    CURRENT_PROJECT_VERSION: "1"
+    SWIFT_VERSION: "6.0"
+    SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor
+    SWIFT_APPROACHABLE_CONCURRENCY: YES
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+    DEAD_CODE_STRIPPING: YES
+
+packages:
+  SnagKit:
+    path: Packages/SnagKit
+
+targets:
+  Snag:
+    type: application
+    platform: iOS
+    sources:
+      - path: App
+        excludes:
+          - "**/*.md"
+          - "**/*.storekit"
+          - "Info.plist"
+          - "Snag.entitlements"
+    dependencies:
+      - package: SnagKit
+    entitlements:
+      path: App/Snag.entitlements
+      properties:
+        aps-environment: development
+    info:
+      path: App/Info.plist
+      properties:
+        CFBundleDisplayName: Snag
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        LSApplicationCategoryType: public.app-category.shopping
+        ITSAppUsesNonExemptEncryption: false
+        UILaunchScreen: {}
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: true
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        UIBackgroundModes:
+          - fetch
+          - processing
+          - remote-notification
+        BGTaskSchedulerPermittedIdentifiers:
+          - com.oftenunknown.snag.price-refresh
+        NSCameraUsageDescription: Snag uses the camera to scan barcodes and price tags so it can find you a better price.
+        NSPhotoLibraryAddUsageDescription: Snag can save your AI persona avatar to Photos.
+        CFBundleURLTypes:
+          - CFBundleURLName: com.oftenunknown.snag
+            CFBundleURLSchemes: [snag]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.oftenunknown.snag
+        PRODUCT_NAME: Snag
+        TARGETED_DEVICE_FAMILY: "1,2"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        CODE_SIGN_STYLE: Automatic
+        ENABLE_PREVIEWS: YES
+        GENERATE_INFOPLIST_FILE: NO
+        SUPPORTS_MACCATALYST: NO
+        SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: NO
+    scheme:
+      testTargets:
+        - SnagUITests
+      storeKitConfiguration: App/Resources/Snag.storekit
+
+  SnagUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources: [UITests]
+    dependencies:
+      - target: Snag
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.oftenunknown.snag.uitests
+        GENERATE_INFOPLIST_FILE: YES
+        CODE_SIGN_STYLE: Automatic
+        SWIFT_DEFAULT_ACTOR_ISOLATION: nonisolated

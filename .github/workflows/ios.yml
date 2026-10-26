@@ -1,0 +1,67 @@
+name: iOS CI
+
+on:
+  push:
+    paths-ignore:
+      - "backend/**"
+      - "**/*.md"
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ios-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  core-tests:
+    name: SnagKit tests
+    runs-on: xcode-27
+    steps:
+      - uses: actions/checkout@v4
+      - name: Swift tests
+        run: swift test --package-path Packages/SnagKit 2>&1 | tail -40
+
+  app:
+    name: Build & UI tests (iPhone 18 Pro, iPhone Duo)
+    runs-on: xcode-27
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Toolchain
+        run: |
+          xcodebuild -version
+          brew list xcodegen >/dev/null 2>&1 || brew install xcodegen
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: Build for testing
+        run: |
+          set -o pipefail
+          xcodebuild build-for-testing \
+            -project Snag.xcodeproj -scheme Snag \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO 2>&1 | tee build.log | xcbeautify --renderer github-actions || {
+              echo "::group::Compiler errors"; grep -E "error:" build.log | sort -u | head -80; echo "::endgroup::"; exit 1; }
+
+      - name: UI tests + screenshots
+        run: |
+          set -o pipefail
+          for device in "iPhone 18 Pro" "iPhone 18 Pro Max" "iPhone Duo"; do
+            slug=$(echo "$device" | tr ' ' '-' )
+            xcodebuild test-without-building \
+              -project Snag.xcodeproj -scheme Snag \
+              -destination "platform=iOS Simulator,name=$device" \
+              -derivedDataPath build \
+              -resultBundlePath "results/$slug.xcresult" 2>&1 | xcbeautify --renderer github-actions || echo "::warning::UI tests failed on $device"
+            mkdir -p "screenshots/$slug"
+            xcrun xcresulttool export attachments --path "results/$slug.xcresult" --output-path "screenshots/$slug" || true
+          done
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: screenshots
+          path: screenshots
+          if-no-files-found: ignore
