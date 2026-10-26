@@ -150,14 +150,20 @@ struct DropBadge: View {
 
     var body: some View {
         let down = fraction > 0
-        Label(abs(fraction).percentString, systemImage: down ? "arrow.down.right" : "arrow.up.right")
-            .font(.caption.weight(.bold))
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            .foregroundStyle(down ? Color.green : Theme.coral)
-            .background((down ? Color.green : Theme.coral).opacity(0.15), in: .capsule)
-            .fixedSize()
-            .accessibilityLabel(down ? "Down \(abs(fraction).percentString)" : "Up \(abs(fraction).percentString)")
+        // Built from Image + Text rather than Label: inside List rows the
+        // list's label style drops the title and leaves only the arrow.
+        HStack(spacing: 3) {
+            Image(systemName: down ? "arrow.down.right" : "arrow.up.right")
+            Text(abs(fraction).percentString).monospacedDigit()
+        }
+        .font(.caption.weight(.bold))
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .foregroundStyle(down ? Color.green : Theme.coral)
+        .background((down ? Color.green : Theme.coral).opacity(0.15), in: .capsule)
+        .fixedSize()
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(down ? "Down \(abs(fraction).percentString)" : "Up \(abs(fraction).percentString)")
     }
 }
 

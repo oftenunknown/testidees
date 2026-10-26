@@ -140,10 +140,14 @@ struct WishRow: View {
                     }
                 }
                 if let rule = item.alert, rule.isEnabled {
-                    Label(alertSummary(rule), systemImage: "bell.fill")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
+                    // Image + Text, not Label, so List rows don't push the
+                    // bell into its own icon column.
+                    HStack(spacing: 4) {
+                        Image(systemName: "bell.fill")
+                        Text(alertSummary(rule)).lineLimit(1)
+                    }
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
                 }
             }
             Spacer(minLength: 0)
