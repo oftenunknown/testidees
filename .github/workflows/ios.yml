@@ -22,7 +22,7 @@ jobs:
         run: swift test --package-path Packages/SnagKit 2>&1 | tail -40
 
   app:
-    name: Build & UI tests (iPhone 18 Pro, iPhone Duo)
+    name: Build & UI tests (iPhone 18 Pro, Pro Max, Duo, iPad mini)
     runs-on: xcode-27
     steps:
       - uses: actions/checkout@v4
@@ -48,8 +48,11 @@ jobs:
       - name: UI tests + screenshots
         run: |
           set -o pipefail
-          for device in "iPhone 18 Pro" "iPhone 18 Pro Max" "iPhone Duo"; do
-            slug=$(echo "$device" | tr ' ' '-' )
+          # iPhone Duo boots closed (outer display) and CI tools can't unfold it;
+          # iPad mini has the same regular/regular size classes as the Duo's
+          # inner display, so it previews the unfolded two-pane layouts.
+          for device in "iPhone 18 Pro" "iPhone 18 Pro Max" "iPhone Duo" "iPad mini (A17 Pro)"; do
+            slug=$(echo "$device" | tr -cs 'A-Za-z0-9' '-' | sed 's/-$//')
             xcodebuild test-without-building \
               -project Snag.xcodeproj -scheme Snag \
               -destination "platform=iOS Simulator,name=$device" \
