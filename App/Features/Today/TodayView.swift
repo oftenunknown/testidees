@@ -28,25 +28,37 @@ struct TodayView: View {
             .sorted { $0.1 < $1.1 }
     }
 
-    private var columns: [GridItem] {
-        [GridItem(.adaptive(minimum: sizeClass == .regular ? 300 : 280), spacing: 16)]
-    }
-
     var body: some View {
         NavigationStack {
             ScrollView {
                 if !query.isEmpty || !searchResults.isEmpty {
                     searchSection
                 } else {
-                    LazyVGrid(columns: columns, alignment: .leading, spacing: 20) {
-                        scanHero
-                        if !drops.isEmpty { dropsSection }
-                        if !upcoming.isEmpty { upcomingSection }
-                        if model.persona.completeness < 0.4 { personaTeaser }
-                        watchingSummary
-                        if !scans.isEmpty { recentScans }
+                    if sizeClass == .regular {
+                        HStack(alignment: .top, spacing: 20) {
+                            VStack(alignment: .leading, spacing: 20) {
+                                scanHero
+                                watchingSummary
+                                if !upcoming.isEmpty { upcomingSection }
+                                if model.persona.completeness < 0.4 { personaTeaser }
+                                if !scans.isEmpty { recentScans }
+                            }
+                            VStack(alignment: .leading, spacing: 20) {
+                                if !drops.isEmpty { dropsSection }
+                            }
+                        }
+                        .padding()
+                    } else {
+                        VStack(alignment: .leading, spacing: 20) {
+                            scanHero
+                            if !drops.isEmpty { dropsSection }
+                            if !upcoming.isEmpty { upcomingSection }
+                            if model.persona.completeness < 0.4 { personaTeaser }
+                            watchingSummary
+                            if !scans.isEmpty { recentScans }
+                        }
+                        .padding()
                     }
-                    .padding()
                 }
             }
             .ambientBackground()
@@ -231,7 +243,7 @@ struct TodayView: View {
                 Divider().frame(height: 40)
                 stat(value: "\(drops.count)", label: "dropped", symbol: "arrow.down.right")
                 Divider().frame(height: 40)
-                stat(value: savedTotal, label: "saved", symbol: "sterlingsign.circle.fill")
+                stat(value: savedTotal, label: "saved", symbol: "banknote.fill")
             }
         }
     }

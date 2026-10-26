@@ -44,6 +44,7 @@ struct GiftStudioView: View {
                 }
             }
             .listStyle(.insetGrouped)
+            .navigationSplitViewColumnWidth(min: 320, ideal: 360, max: 440)
             .scrollContentBackground(.hidden)
             .ambientBackground(tint: Theme.violet, intensity: 0.6)
             .navigationTitle("Gifts")

@@ -10,13 +10,14 @@ struct ProductDetailView: View {
     @Environment(AppModel.self) private var model
     @Environment(AppSettings.self) private var settings
     @Environment(\.modelContext) private var context
-    @Environment(\.horizontalSizeClass) private var sizeClass
     @Bindable var item: WishItem
 
     @State private var isRefreshing = false
     @State private var eligibilityFilter: Set<Eligibility> = []
 
-    private var isWide: Bool { sizeClass == .regular }
+    @State private var contentWidth: CGFloat = 0
+    /// Two columns only when there's real room (Duo inner display, full-width iPad).
+    private var isWide: Bool { contentWidth >= 700 }
 
     var body: some View {
         ScrollView {
@@ -37,6 +38,7 @@ struct ProductDetailView: View {
             .padding()
             .animation(.smooth(duration: 0.45), value: isWide)
         }
+        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { contentWidth = $0 }
         .ambientBackground(intensity: 0.6)
         .navigationTitle(item.brand ?? "Item")
         .navigationBarTitleDisplayMode(.inline)

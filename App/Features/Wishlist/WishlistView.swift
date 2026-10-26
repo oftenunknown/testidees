@@ -66,6 +66,7 @@ struct WishlistView: View {
                         }
                     }
                     .listStyle(.insetGrouped)
+                    .navigationSplitViewColumnWidth(min: 320, ideal: 360, max: 440)
                     .scrollContentBackground(.hidden)
                 }
             }

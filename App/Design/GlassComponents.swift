@@ -156,6 +156,7 @@ struct DropBadge: View {
             .padding(.vertical, 4)
             .foregroundStyle(down ? Color.green : Theme.coral)
             .background((down ? Color.green : Theme.coral).opacity(0.15), in: .capsule)
+            .fixedSize()
             .accessibilityLabel(down ? "Down \(abs(fraction).percentString)" : "Up \(abs(fraction).percentString)")
     }
 }
