@@ -47,7 +47,7 @@ struct GiftStudioView: View {
                 }
             }
             .listStyle(.insetGrouped)
-            .navigationSplitViewColumnWidth(min: 300, ideal: 340, max: 420)
+            .navigationSplitViewColumnWidth(min: 280, ideal: 310, max: 400)
             .scrollContentBackground(.hidden)
             .ambientBackground(tint: Theme.violet, intensity: 0.6)
             .navigationTitle("Gifts")
@@ -61,22 +61,27 @@ struct GiftStudioView: View {
             }
             .modifier(VerticalBarReader())
         } detail: {
-            if let id = model.recipientSelection, let record = recipients.first(where: { $0.id == id }) {
-                NavigationStack {
-                    RecipientDetailView(record: record) { editing = record }
+            Group {
+                if let id = model.recipientSelection, let record = recipients.first(where: { $0.id == id }) {
+                    NavigationStack {
+                        RecipientDetailView(record: record) { editing = record }
+                    }
+                    .id(record.id)
+                } else {
+                    EmptyStateView(
+                        symbol: "gift",
+                        title: recipients.isEmpty ? "Who are you shopping for?" : "Pick someone",
+                        message: "Add the people you buy for. We blend their interests with your personality to find gifts that feel personal — then find the best price.",
+                        actionTitle: recipients.isEmpty ? "Add someone" : nil
+                    ) { addingRecipient = true }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .ambientBackground(tint: Theme.violet, intensity: 0.6)
                 }
-                .id(record.id)
-            } else {
-                EmptyStateView(
-                    symbol: "gift",
-                    title: recipients.isEmpty ? "Who are you shopping for?" : "Pick someone",
-                    message: "Add the people you buy for. We blend their interests with your personality to find gifts that feel personal — then find the best price.",
-                    actionTitle: recipients.isEmpty ? "Add someone" : nil
-                ) { addingRecipient = true }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .ambientBackground(tint: Theme.violet, intensity: 0.6)
             }
+            // Lets the list and detail tile side by side on narrower wide screens.
+            .navigationSplitViewColumnWidth(min: 360, ideal: 520)
         }
+        .navigationSplitViewStyle(.balanced)
         .sheet(isPresented: $addingRecipient) {
             RecipientEditorView(record: nil)
         }

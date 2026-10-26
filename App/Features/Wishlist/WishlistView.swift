@@ -69,7 +69,7 @@ struct WishlistView: View {
                         }
                     }
                     .listStyle(.insetGrouped)
-                    .navigationSplitViewColumnWidth(min: 300, ideal: 340, max: 420)
+                    .navigationSplitViewColumnWidth(min: 280, ideal: 310, max: 400)
                     .scrollContentBackground(.hidden)
                 }
             }
@@ -94,16 +94,20 @@ struct WishlistView: View {
             .modifier(VerticalBarReader())
             .sideBarPriority(toolbarItems: false)
         } detail: {
-            if let id = model.wishlistSelection, let item = items.first(where: { $0.productID == id }) {
-                NavigationStack {
-                    ProductDetailView(item: item)
+            Group {
+                if let id = model.wishlistSelection, let item = items.first(where: { $0.productID == id }) {
+                    NavigationStack {
+                        ProductDetailView(item: item)
+                    }
+                    .id(item.productID)
+                } else {
+                    EmptyStateView(symbol: "hand.point.left", title: "Pick something", message: "Choose an item to see its price history, alert and every offer.")
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .ambientBackground(intensity: 0.5)
                 }
-                .id(item.productID)
-            } else {
-                EmptyStateView(symbol: "hand.point.left", title: "Pick something", message: "Choose an item to see its price history, alert and every offer.")
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .ambientBackground(intensity: 0.5)
             }
+            // Lets the list and detail tile side by side on narrower wide screens.
+            .navigationSplitViewColumnWidth(min: 360, ideal: 520)
         }
         .navigationSplitViewStyle(.balanced)
     }
