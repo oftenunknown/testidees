@@ -112,9 +112,6 @@ public struct DiscountSuggestion: Hashable, Sendable, Identifiable {
 }
 
 public enum DiscountMatcher {
-    /// Typical welcome-offer value used to rank new-customer opportunities.
-    public static let typicalWelcomeFraction = 0.10
-
     public static func suggestions(
         for offer: Offer,
         eligibilities: Set<Eligibility>,
@@ -159,18 +156,20 @@ public enum DiscountMatcher {
             ))
         }
 
-        // 3. Welcome offers for shops the user hasn't bought from.
+        // 3. Welcome offers for shops the user hasn't bought from. Not every
+        // shop has one, so it's a tip rather than something we price in.
         if eligibilities.contains(.newCustomer), !knownMerchants.contains(domain) {
             results.append(DiscountSuggestion(
                 id: "welcome-\(domain)",
-                title: "New-customer welcome offer",
+                title: "New here? Look for a sign-up code",
                 eligibility: .newCustomer,
                 program: nil,
                 savedCode: nil,
-                estimatedFraction: typicalWelcomeFraction,
+                estimatedFraction: nil,
                 mechanism: .code,
                 url: nil,
-                isEstimate: true
+                isEstimate: true,
+                isLookupHint: true
             ))
         }
 

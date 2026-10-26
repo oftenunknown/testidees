@@ -47,6 +47,10 @@ struct PriceCheckView: View {
                     shelfPriceEntry
                 }
 
+                // Actions sit right under the answer so they're visible
+                // even at the sheet's smallest height.
+                actionBar
+
                 if !ranked.isEmpty {
                     SectionHeader(title: "Best prices", subtitle: perksSubtitle, symbol: "cart.fill")
                     VStack(spacing: 10) {
@@ -91,10 +95,8 @@ struct PriceCheckView: View {
                 }
             }
             .padding()
-            .padding(.bottom, 80)
         }
         .scrollDismissesKeyboard(.interactively)
-        .safeAreaInset(edge: .bottom) { actionBar }
         .navigationTitle(product.brand ?? "Result")
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showGiftPicker) {
@@ -211,8 +213,6 @@ struct PriceCheckView: View {
             }
             .controlSize(.large)
         }
-        .padding(.horizontal)
-        .padding(.bottom, 8)
     }
 
     private var shareMessage: String {

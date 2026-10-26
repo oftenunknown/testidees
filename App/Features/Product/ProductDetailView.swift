@@ -69,17 +69,30 @@ struct ProductDetailView: View {
         GlassCard {
             VStack(alignment: .leading, spacing: 14) {
                 ProductHeader(product: item.product, bestPrice: nil, currency: item.currency)
-                HStack(alignment: .firstTextBaseline) {
-                    if let best = rankedOffers.first {
-                        PriceLabel(price: best.effectivePrice, currency: item.currency, was: item.addedPrice, font: .largeTitle.weight(.bold))
+                if let best = rankedOffers.first {
+                    PriceLabel(price: best.effectivePrice, currency: item.currency, was: item.addedPrice, font: .largeTitle.weight(.bold))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.6)
+                    HStack(spacing: 8) {
                         Text("at \(best.offer.merchant)").font(.subheadline).foregroundStyle(.secondary)
-                    } else if let price = item.bestPrice {
-                        PriceLabel(price: price, currency: item.currency, font: .largeTitle.weight(.bold))
-                    } else {
-                        Text("No price yet").font(.title2.weight(.semibold)).foregroundStyle(.secondary)
+                        Spacer(minLength: 0)
+                        if let drop = item.dropSinceAdded { DropBadge(fraction: drop) }
                     }
-                    Spacer()
-                    if let drop = item.dropSinceAdded { DropBadge(fraction: drop) }
+                    if let discount = best.bestDiscount {
+                        Label("Includes \(discount.title.lowercased())\(discount.isEstimate ? " (estimated)" : "")", systemImage: "ticket.fill")
+                            .font(.caption)
+                            .foregroundStyle(Theme.teal)
+                    }
+                } else if let price = item.bestPrice {
+                    HStack {
+                        PriceLabel(price: price, currency: item.currency, font: .largeTitle.weight(.bold))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.6)
+                        Spacer(minLength: 0)
+                        if let drop = item.dropSinceAdded { DropBadge(fraction: drop) }
+                    }
+                } else {
+                    Text("No price yet").font(.title2.weight(.semibold)).foregroundStyle(.secondary)
                 }
                 if let checked = item.lastCheckedAt {
                     Text("Checked \(checked.relativeShort)")
@@ -236,10 +249,10 @@ struct AlertEditor: View {
         var title: String {
             switch self {
             case .off: "Off"
-            case .percent: "% drop"
+            case .percent: "% off"
             case .target: "Target"
-            case .anyDrop: "Any drop"
-            case .lowest: "Lowest ever"
+            case .anyDrop: "Any"
+            case .lowest: "Lowest"
             }
         }
     }

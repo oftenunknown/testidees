@@ -29,6 +29,7 @@ final class SnagUITests: XCTestCase {
         snapshot(app, "04-Gifts")
         let sam = app.staticTexts["Sam"].firstMatch
         if sam.waitForExistence(timeout: 3) {
+            if !sam.isHittable { app.swipeUp() }
             sam.tap()
             sleep(2)
             snapshot(app, "05-Recipient")
@@ -68,7 +69,8 @@ final class SnagUITests: XCTestCase {
 
     @MainActor
     private func snapshot(_ app: XCUIApplication, _ name: String) {
-        let attachment = XCTAttachment(screenshot: app.screenshot())
+        // The screen (not the app element) captures rotated layouts correctly.
+        let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
         attachment.name = name
         attachment.lifetime = .keepAlways
         add(attachment)

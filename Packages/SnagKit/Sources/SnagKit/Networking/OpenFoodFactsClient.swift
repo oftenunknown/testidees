@@ -20,7 +20,7 @@ public struct OpenFoodFactsClient: Sendable {
             guard let (data, response) = try? await http.data(for: .get(url)), response.statusCode == 200 else { continue }
             guard let decoded = try? JSONDecoder().decode(Envelope.self, from: data), decoded.status == 1, let p = decoded.product,
                   let name = p.product_name?.nonEmpty ?? p.generic_name?.nonEmpty else { continue }
-            let title = [name, p.quantity?.nonEmpty].compactMap { $0 }.joined(separator: " · ")
+            let title = [name, p.quantity.flatMap(Self.cleanQuantity)].compactMap { $0 }.joined(separator: " · ")
             return Product(
                 gtin: GTIN.normalize(p.code ?? gtin) ?? gtin,
                 title: title,
@@ -31,6 +31,13 @@ public struct OpenFoodFactsClient: Sendable {
             )
         }
         throw LookupError.notFound
+    }
+
+    /// "400 g e" / "400 g ℮" → "400 g".
+    static func cleanQuantity(_ raw: String) -> String? {
+        var q = raw.replacingOccurrences(of: "℮", with: "").trimmingCharacters(in: .whitespaces)
+        if q.hasSuffix(" e") { q.removeLast(2) }
+        return q.nonEmpty
     }
 
     struct Envelope: Decodable {

@@ -44,8 +44,8 @@ struct ScanView: View {
             NavigationStack { resultPane }
                 .modifier(CheckoutPresenter())
                 .modifier(PaywallPresenter())
-                .presentationDetents([.fraction(0.45), .large])
-                .presentationBackgroundInteraction(.enabled(upThrough: .fraction(0.45)))
+                .presentationDetents([.fraction(0.55), .large])
+                .presentationBackgroundInteraction(.enabled(upThrough: .fraction(0.55)))
                 .presentationDragIndicator(.visible)
         }
         .onChange(of: session.phase) { _, phase in

@@ -50,7 +50,7 @@ struct NetworkingTests {
     }
 
     @Test func fallsBackToOpenFoodFacts() async throws {
-        let food = #"{"code":"3017620422003","product":{"product_name":"Nutella","brands":"Nutella, Ferrero","quantity":"400 g","image_front_url":"https://images.openfoodfacts.org/x.jpg"},"status":1}"#
+        let food = #"{"code":"3017620422003","product":{"product_name":"Nutella","brands":"Nutella, Ferrero","quantity":"400 g e","image_front_url":"https://images.openfoodfacts.org/x.jpg"},"status":1}"#
         let prices = #"{"items":[{"id":1,"price":3.5,"currency":"GBP","date":"2026-10-06","product_name":"NUTELLA","location":{"osm_name":"Tesco Express","osm_brand":"Tesco","osm_address_city":"London","osm_address_country_code":"GB"}},{"id":2,"price":4.45,"currency":"GBP","date":"2026-10-01","location":{"osm_name":"Carrefour","osm_address_country_code":"FR"}}]}"#
         let http = StubHTTP(routes: [
             "api.upcitemdb.com": (200, #"{"code":"OK","total":0,"items":[]}"#),

@@ -160,12 +160,10 @@ struct PersonaCardView: View {
                                 .font(.caption.weight(.semibold))
                                 .padding(.horizontal, 10).padding(.vertical, 5)
                                 .background(color.opacity(0.18), in: .capsule)
+                                .fixedSize()
                         }
                         ForEach(persona.topInterests.prefix(4)) { interest in
-                            Label(interest.title, systemImage: interest.symbol)
-                                .font(.caption)
-                                .padding(.horizontal, 10).padding(.vertical, 5)
-                                .background(.background.opacity(0.4), in: .capsule)
+                            InterestTag(interest: interest)
                         }
                     }
                 }
@@ -207,5 +205,23 @@ struct PersonaAvatar: View {
         .overlay(Circle().stroke(.white.opacity(0.5), lineWidth: 1.5))
         .shadow(color: color.opacity(0.4), radius: 10, y: 4)
         .accessibilityHidden(true)
+    }
+}
+
+/// Small icon + text tag. Built from an HStack rather than Label because
+/// List rows restyle Labels (icon-only), which broke wrapping layouts.
+struct InterestTag: View {
+    var interest: Interest
+
+    var body: some View {
+        HStack(spacing: 4) {
+            Image(systemName: interest.symbol).imageScale(.small)
+            Text(interest.title).lineLimit(1)
+        }
+        .font(.caption)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 5)
+        .background(.background.opacity(0.45), in: .capsule)
+        .fixedSize()
     }
 }

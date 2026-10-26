@@ -68,10 +68,7 @@ struct RecipientDetailView: View {
                 if !profile.interests.isEmpty {
                     FlowLayout(spacing: 6) {
                         ForEach(profile.interests.prefix(8)) { w in
-                            Label(w.interest.title, systemImage: w.interest.symbol)
-                                .font(.caption)
-                                .padding(.horizontal, 10).padding(.vertical, 5)
-                                .background(.background.opacity(0.45), in: .capsule)
+                            InterestTag(interest: w.interest)
                         }
                     }
                 }
