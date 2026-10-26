@@ -11,6 +11,7 @@ struct WishlistView: View {
     @Query(sort: \WishItem.createdAt, order: .reverse) private var items: [WishItem]
     @State private var sort: Sort = .recent
     @State private var showPurchased = false
+    @State private var columnVisibility: NavigationSplitViewVisibility = .all
 
     enum Sort: String, CaseIterable, Identifiable {
         case recent, biggestDrop, price
@@ -35,7 +36,9 @@ struct WishlistView: View {
 
     var body: some View {
         @Bindable var model = model
-        NavigationSplitView {
+        // Keep the list visible next to the detail on wide screens (Duo inner
+        // display, iPad portrait) instead of hiding it behind a toggle.
+        NavigationSplitView(columnVisibility: $columnVisibility) {
             Group {
                 if visible.isEmpty {
                     EmptyStateView(
@@ -66,7 +69,7 @@ struct WishlistView: View {
                         }
                     }
                     .listStyle(.insetGrouped)
-                    .navigationSplitViewColumnWidth(min: 320, ideal: 360, max: 440)
+                    .navigationSplitViewColumnWidth(min: 300, ideal: 340, max: 420)
                     .scrollContentBackground(.hidden)
                 }
             }

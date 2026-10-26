@@ -11,10 +11,13 @@ struct GiftStudioView: View {
     @State private var editing: RecipientRecord?
     @State private var addingRecipient = false
     @State private var showPersonaBuilder = false
+    @State private var columnVisibility: NavigationSplitViewVisibility = .all
 
     var body: some View {
         @Bindable var model = model
-        NavigationSplitView {
+        // Keep the list visible next to the detail on wide screens (Duo inner
+        // display, iPad portrait) instead of hiding it behind a toggle.
+        NavigationSplitView(columnVisibility: $columnVisibility) {
             List(selection: $model.recipientSelection) {
                 Section {
                     PersonaCardView(persona: model.persona) { showPersonaBuilder = true }
@@ -44,7 +47,7 @@ struct GiftStudioView: View {
                 }
             }
             .listStyle(.insetGrouped)
-            .navigationSplitViewColumnWidth(min: 320, ideal: 360, max: 440)
+            .navigationSplitViewColumnWidth(min: 300, ideal: 340, max: 420)
             .scrollContentBackground(.hidden)
             .ambientBackground(tint: Theme.violet, intensity: 0.6)
             .navigationTitle("Gifts")
