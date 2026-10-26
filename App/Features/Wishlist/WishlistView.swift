@@ -129,7 +129,11 @@ struct WishRow: View {
                 Text(item.title).font(.subheadline.weight(.semibold)).lineLimit(2)
                 HStack(spacing: 6) {
                     if let price = item.bestPrice {
-                        Text(price.money(item.currency)).font(.subheadline.weight(.bold)).monospacedDigit()
+                        Text(price.money(item.currency))
+                            .font(.subheadline.weight(.bold))
+                            .monospacedDigit()
+                            .lineLimit(1)
+                            .fixedSize()
                     }
                     if let merchant = item.bestMerchant {
                         Text(merchant).font(.caption).foregroundStyle(.secondary).lineLimit(1)
@@ -139,6 +143,7 @@ struct WishRow: View {
                     Label(alertSummary(rule), systemImage: "bell.fill")
                         .font(.caption2)
                         .foregroundStyle(.secondary)
+                        .lineLimit(1)
                 }
             }
             Spacer(minLength: 0)
