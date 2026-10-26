@@ -82,6 +82,22 @@ struct NetworkingTests {
         #expect(deduped.map(\.id) == ["b", "c"])
     }
 
+    @Test func refreshesNameOnlyProductsByTitleMatch() async {
+        let body = """
+        {"code":"OK","total":2,"items":[
+          {"title":"Sony WH-1000XM6 Wireless Headphones Black","offers":[{"merchant":"Best Buy","domain":"bestbuy.com","price":329.99,"shipping":"Free Shipping","condition":"New"}]},
+          {"title":"Ear pads for Sony headphones","offers":[{"merchant":"eBay","domain":"ebay.com","price":12.0,"condition":"New"}]}
+        ]}
+        """
+        let service = PriceSearchService(upc: .init(http: StubHTTP(routes: ["api.upcitemdb.com/prod/trial/search": (200, body)])))
+        let product = Product(title: "Sony WH-1000XM6 Wireless Headphones", source: .upcItemDB)
+        let offers = await service.refreshOffers(for: product, region: .us)
+        #expect(offers.map(\.merchant) == ["Best Buy"])
+
+        let unrelated = Product(title: "Garden hose 50ft", source: .upcItemDB)
+        #expect(await service.refreshOffers(for: unrelated, region: .us).isEmpty)
+    }
+
     @Test func backendRoundTripsDates() throws {
         let rule = PriceAlertRule(trigger: .percentDrop(0.1), baselinePrice: 100, currency: "USD", lastNotifiedAt: Date(timeIntervalSince1970: 1_800_000_000))
         let data = try SnagBackendClient.encoder.encode(rule)

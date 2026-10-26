@@ -94,13 +94,37 @@ public struct PriceSearchService: Sendable {
     /// Re-prices a watched product (background refresh).
     public func refreshOffers(for product: Product, region: Region) async -> [Offer] {
         var offers: [Offer] = []
-        if let gtin = product.gtin, case .success(let r) = await capture({ try await upc.lookup(gtin: gtin) }) {
-            offers += r.offers
+        if let gtin = product.gtin {
+            if case .success(let r) = await capture({ try await upc.lookup(gtin: gtin) }) { offers += r.offers }
+        } else if product.source != .demo {
+            // Found by name: re-run the search and keep only the same product.
+            let query = product.searchQuery
+            if case .success(let found) = await capture({ try await upc.search(query) }),
+               let match = Self.bestTitleMatch(for: product, in: found) {
+                offers += match.offers
+            }
         }
         if let backend, case .success(let live) = await capture({ try await backend.offers(query: product.searchQuery, gtin: product.gtin, region: region) }) {
             offers += live
         }
         return Self.dedupe(offers)
+    }
+
+    /// The search result that is clearly the same product, if any.
+    static func bestTitleMatch(for product: Product, in results: [ProductLookupResult]) -> ProductLookupResult? {
+        let target = titleTokens(product.title)
+        guard !target.isEmpty else { return nil }
+        let scored = results.map { result -> (ProductLookupResult, Double) in
+            let tokens = titleTokens(result.product.title)
+            let overlap = Double(target.intersection(tokens).count) / Double(target.union(tokens).count)
+            return (result, overlap)
+        }
+        guard let best = scored.max(by: { $0.1 < $1.1 }), best.1 >= 0.5 else { return nil }
+        return best.0
+    }
+
+    static func titleTokens(_ title: String) -> Set<String> {
+        Set(title.lowercased().split { !$0.isLetter && !$0.isNumber }.map(String.init).filter { $0.count > 1 })
     }
 
     /// One offer per merchant + condition, keeping the cheapest, freshest one.
