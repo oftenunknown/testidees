@@ -1,0 +1,26 @@
+name = "snag-backend"
+main = "src/index.ts"
+compatibility_date = "2026-09-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Check watched prices every 30 minutes.
+[triggers]
+crons = ["*/30 * * * *"]
+
+# Create with: npx wrangler kv namespace create SNAG
+[[kv_namespaces]]
+binding = "SNAG"
+id = "REPLACE_WITH_YOUR_KV_NAMESPACE_ID"
+
+[vars]
+APNS_BUNDLE_ID = "com.oftenunknown.snag"
+# TestFlight and App Store builds use the production push environment.
+APNS_PRODUCTION = "true"
+
+# Secrets (set with `npx wrangler secret put NAME`):
+#   SERPAPI_KEY        optional, enables live Google Shopping prices
+#   ANTHROPIC_API_KEY  optional, enables /v1/gifts for devices without Apple Intelligence
+#   APNS_KEY_P8        contents of your APNs AuthKey_XXXX.p8
+#   APNS_KEY_ID        APNs key ID
+#   APNS_TEAM_ID       Apple Team ID
+#   SNAG_SHARED_SECRET optional, require this value in the X-Snag-Key header

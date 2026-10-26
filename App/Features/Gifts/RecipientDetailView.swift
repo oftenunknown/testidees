@@ -152,7 +152,7 @@ struct RecipientDetailView: View {
         isGenerating = true
         let count = model.isPremium ? 6 : 3
         let avoid = more ? record.ideas.map(\.title) : []
-        let (ideas, usedEngine) = await model.ai.giftIdeas(for: profile, from: model.persona, premium: model.isPremium, count: count, avoid: avoid)
+        let (ideas, usedEngine) = await model.ai.giftIdeas(for: profile, from: model.persona, premium: model.isPremium, count: count, avoid: avoid, backend: model.search.backend)
         withAnimation(.spring(duration: 0.6, bounce: 0.25)) {
             record.ideas = more && model.isPremium ? record.ideas + ideas : ideas
             record.ideasGeneratedAt = .now

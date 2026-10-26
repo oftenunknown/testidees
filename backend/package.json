@@ -1,0 +1,22 @@
+{
+  "name": "snag-backend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Optional Snag server: live shopping-search prices, AI gift ideas and round-the-clock price watching with push.",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^1.2.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20261001.0",
+    "typescript": "^5.9.0 || ^6.0.0",
+    "vitest": "^5.0.0",
+    "wrangler": "^4.40.0"
+  }
+}

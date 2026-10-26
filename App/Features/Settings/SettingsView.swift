@@ -46,6 +46,7 @@ struct SettingsView: View {
                         .textInputAutocapitalization(.never)
                         .keyboardType(.URL)
                         .autocorrectionDisabled()
+                    SecureField("Server key (if you set SNAG_SHARED_SECRET)", text: $settings.backendKey)
                     SecureField("UPCitemdb API key (optional)", text: $settings.upcItemDBKey)
                 } header: {
                     Text("Price sources")

@@ -14,6 +14,7 @@ final class AppSettings {
     var autoApplyCodes: Bool { didSet { defaults.set(autoApplyCodes, forKey: Keys.autoApply) } }
     var backendURLString: String { didSet { defaults.set(backendURLString, forKey: Keys.backend) } }
     var upcItemDBKey: String { didSet { defaults.set(upcItemDBKey, forKey: Keys.upcKey) } }
+    var backendKey: String { didSet { defaults.set(backendKey, forKey: Keys.backendKey) } }
     /// TestFlight/Xcode builds only: unlock premium without a purchase.
     var testerPremium: Bool { didSet { defaults.set(testerPremium, forKey: Keys.testerPremium) } }
     var knownMerchants: Set<String> { didSet { defaults.set(Array(knownMerchants), forKey: Keys.knownMerchants) } }
@@ -28,6 +29,7 @@ final class AppSettings {
         autoApplyCodes = defaults.object(forKey: Keys.autoApply) as? Bool ?? true
         backendURLString = defaults.string(forKey: Keys.backend) ?? ""
         upcItemDBKey = defaults.string(forKey: Keys.upcKey) ?? ""
+        backendKey = defaults.string(forKey: Keys.backendKey) ?? ""
         testerPremium = defaults.bool(forKey: Keys.testerPremium)
         knownMerchants = Set(defaults.stringArray(forKey: Keys.knownMerchants) ?? [])
     }
@@ -38,6 +40,10 @@ final class AppSettings {
         let trimmed = backendURLString.trimmingCharacters(in: .whitespaces)
         guard !trimmed.isEmpty, let url = URL(string: trimmed), url.scheme == "https" else { return nil }
         return url
+    }
+
+    func backendClient() -> SnagBackendClient? {
+        backendURL.map { SnagBackendClient(baseURL: $0, deviceID: deviceID, sharedKey: backendKey.isEmpty ? nil : backendKey) }
     }
 
     var deviceID: String {
@@ -55,6 +61,7 @@ final class AppSettings {
         static let autoApply = "autoApplyCodes"
         static let backend = "backendURL"
         static let upcKey = "upcItemDBKey"
+        static let backendKey = "backendKey"
         static let testerPremium = "testerPremium"
         static let knownMerchants = "knownMerchants"
         static let deviceID = "deviceID"

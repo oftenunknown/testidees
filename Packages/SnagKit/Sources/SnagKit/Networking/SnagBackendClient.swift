@@ -10,10 +10,13 @@ public struct SnagBackendClient: Sendable {
     public let baseURL: URL
     let http: HTTPClient
     let deviceID: String
+    /// Matches the server's optional SNAG_SHARED_SECRET.
+    let sharedKey: String?
 
-    public init(baseURL: URL, deviceID: String, http: HTTPClient = URLSessionHTTPClient()) {
+    public init(baseURL: URL, deviceID: String, sharedKey: String? = nil, http: HTTPClient = URLSessionHTTPClient()) {
         self.baseURL = baseURL
         self.deviceID = deviceID
+        self.sharedKey = sharedKey
         self.http = http
     }
 
@@ -100,6 +103,7 @@ public struct SnagBackendClient: Sendable {
     func send<T: Decodable>(_ request: URLRequest) async throws -> T {
         var request = request
         request.setValue(deviceID, forHTTPHeaderField: "X-Snag-Device")
+        if let sharedKey, !sharedKey.isEmpty { request.setValue(sharedKey, forHTTPHeaderField: "X-Snag-Key") }
         let (data, response) = try await http.data(for: request)
         switch response.statusCode {
         case 200..<300:

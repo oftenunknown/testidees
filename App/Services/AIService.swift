@@ -55,12 +55,13 @@ nonisolated struct PersonaPortrait {
 @Observable
 final class AIService {
     enum Engine: String {
-        case privateCloud, onDevice, catalog
+        case privateCloud, onDevice, server, catalog
 
         var label: String {
             switch self {
             case .privateCloud: "Apple Intelligence · Private Cloud"
             case .onDevice: "Apple Intelligence · on device"
+            case .server: "Snag cloud ideas"
             case .catalog: "Snag curated ideas"
             }
         }
@@ -93,11 +94,20 @@ final class AIService {
         from giver: PersonaProfile,
         premium: Bool,
         count: Int = 6,
-        avoid: [String] = []
+        avoid: [String] = [],
+        backend: SnagBackendClient? = nil
     ) async -> (ideas: [GiftIdea], engine: Engine) {
         let seeds = GiftRecommender.recommend(for: recipient, from: giver, count: 5)
         let engine = bestEngine(premium: premium)
         guard engine != .catalog else {
+            // No Apple Intelligence here: premium users can still get cloud ideas from the Snag server.
+            if premium, let backend {
+                isWorking = true
+                defer { isWorking = false }
+                if let ideas = try? await backend.giftIdeas(.init(recipient: recipient, giver: giver, count: count, avoid: avoid)), !ideas.isEmpty {
+                    return (ideas, .server)
+                }
+            }
             return (GiftRecommender.recommend(for: recipient, from: giver, count: count).filter { !avoid.contains($0.title) }, .catalog)
         }
 

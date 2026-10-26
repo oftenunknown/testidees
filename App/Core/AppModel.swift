@@ -92,7 +92,7 @@ final class AppModel {
         let key = settings.upcItemDBKey.trimmingCharacters(in: .whitespaces)
         return PriceSearchService(
             upc: UPCItemDBClient(apiKey: key.isEmpty ? nil : key),
-            backend: settings.backendURL.map { SnagBackendClient(baseURL: $0, deviceID: settings.deviceID) }
+            backend: settings.backendClient()
         )
     }
 
@@ -143,8 +143,7 @@ final class AppModel {
     }
 
     func registerServerWatch(_ item: WishItem) {
-        guard let url = settings.backendURL, let rule = item.alert else { return }
-        let client = SnagBackendClient(baseURL: url, deviceID: settings.deviceID)
+        guard let client = settings.backendClient(), let rule = item.alert else { return }
         let registration = SnagBackendClient.WatchRegistration(
             productID: item.productID, gtin: item.gtin, query: item.product.searchQuery,
             region: settings.region, rule: rule, apnsToken: apnsToken
