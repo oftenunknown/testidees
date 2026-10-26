@@ -1,0 +1,21 @@
+name: Runner probe
+on:
+  push:
+    paths: ['.github/workflows/probe.yml']
+jobs:
+  probe:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-26, macos-latest]
+    steps:
+      - name: Toolchains
+        run: |
+          sw_vers
+          ls -d /Applications/Xcode*.app || true
+          xcodebuild -version
+          xcodebuild -showsdks
+          swift --version
+          xcrun simctl list devices available | head -80
+          which xcodegen || brew info xcodegen | head -3
