@@ -13,7 +13,7 @@ enum PriceWatcher {
     static func scheduleNextRefresh(premium: Bool) {
         let request = BGAppRefreshTaskRequest(identifier: refreshTaskID)
         request.earliestBeginDate = Date(timeIntervalSinceNow: premium ? 60 * 60 : 3 * 60 * 60)
-        try? BGTaskScheduler.shared.submit(request)
+        Task { try? await BGTaskScheduler.shared.submitTaskRequest(request) }
     }
 
     struct Outcome {

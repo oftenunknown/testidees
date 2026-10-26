@@ -131,13 +131,12 @@ final class CheckoutAgent: NSObject, WKNavigationDelegate, WKScriptMessageHandle
     func attach(_ webView: WKWebView) {
         self.webView = webView
         observations = [
+            // WebKit reports KVO changes on the main thread.
             webView.observe(\.estimatedProgress, options: [.new]) { [weak self] web, _ in
-                let value = web.estimatedProgress
-                Task { @MainActor in self?.progress = value }
+                MainActor.assumeIsolated { self?.progress = web.estimatedProgress }
             },
             webView.observe(\.isLoading, options: [.new]) { [weak self] web, _ in
-                let loading = web.isLoading
-                Task { @MainActor in self?.isLoading = loading }
+                MainActor.assumeIsolated { self?.isLoading = web.isLoading }
             },
         ]
     }

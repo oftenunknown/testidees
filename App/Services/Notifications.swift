@@ -3,7 +3,7 @@ import UIKit
 import UserNotifications
 import SnagKit
 
-enum NotificationIDs {
+nonisolated enum NotificationIDs {
     static let priceDropCategory = "PRICE_DROP"
     static let buyAction = "BUY_NOW"
     static let viewAction = "VIEW_ITEM"

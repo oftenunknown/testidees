@@ -40,12 +40,13 @@ struct PersonaBuilderView: View {
                         done: model.persona.sources.contains(.quiz), premium: false
                     ) { showQuiz = true }
 
+                    let photosLabel = sourceLabel(
+                        symbol: "photo.stack.fill", color: Theme.coral,
+                        title: "Photos or Instagram screenshots", detail: "Pick your grid or favourite photos. We read them on device.",
+                        done: model.persona.sources.contains(.photos), premium: true
+                    )
                     PhotosPicker(selection: $photoItems, maxSelectionCount: 30, matching: .images) {
-                        sourceLabel(
-                            symbol: "photo.stack.fill", color: Theme.coral,
-                            title: "Photos or Instagram screenshots", detail: "Pick your grid or favourite photos. We read them on device.",
-                            done: model.persona.sources.contains(.photos), premium: true
-                        )
+                        photosLabel
                     }
                     .buttonStyle(.plain)
                     .disabled(!model.isPremium)

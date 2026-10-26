@@ -59,8 +59,9 @@ struct RecipientEditorView: View {
                                 .sorted { $0.weight > $1.weight }
                         }
                     ))
+                    let photoTitle = analyzing ? "Reading photos…" : "Learn from their photos or Instagram screenshots"
                     PhotosPicker(selection: $photoItems, maxSelectionCount: 20, matching: .images) {
-                        Label(analyzing ? "Reading photos…" : "Learn from their photos or Instagram screenshots", systemImage: "photo.stack")
+                        Label(photoTitle, systemImage: "photo.stack")
                     }
                     .disabled(analyzing)
                 } header: {
