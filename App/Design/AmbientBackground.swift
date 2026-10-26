@@ -1,26 +1,22 @@
 import SwiftUI
 
-/// Slowly drifting mesh gradient behind content so Liquid Glass has
-/// something to refract. Static when Reduce Motion is on.
+/// Soft mesh gradient behind content so Liquid Glass has colour to refract.
+/// Deliberately static: a constantly redrawing background costs battery on
+/// every screen, and the glass itself supplies the motion as you scroll.
 struct AmbientBackground: View {
     var tint: Color = Theme.teal
     var intensity: Double = 1
     @Environment(\.colorScheme) private var colorScheme
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: 1 / 20, paused: reduceMotion)) { context in
-            let t = reduceMotion ? 0 : context.date.timeIntervalSinceReferenceDate
-            MeshGradient(
-                width: 3, height: 3,
-                points: points(t),
-                colors: colors
-            )
-        }
-        .opacity(intensity)
-        .ignoresSafeArea()
-        .accessibilityHidden(true)
+        MeshGradient(width: 3, height: 3, points: points(phase), colors: colors)
+            .opacity(intensity)
+            .ignoresSafeArea()
+            .accessibilityHidden(true)
     }
+
+    /// Fixed per screen tint so different tabs feel slightly different.
+    private var phase: TimeInterval { tint == Theme.teal ? 4 : tint == Theme.violet ? 11 : 17 }
 
     private var colors: [Color] {
         let dark = colorScheme == .dark

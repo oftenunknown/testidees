@@ -87,7 +87,7 @@ struct RecipientDetailView: View {
             Image(systemName: "sparkles")
                 .font(.system(size: 40))
                 .foregroundStyle(Theme.brandGradient)
-                .symbolEffect(.wiggle, options: .repeat(.periodic(delay: 2)))
+                .symbolEffect(.wiggle, options: .repeat(.periodic(2, delay: 1.5)))
             Text("Ideas for \(profile.name)").font(.title3.weight(.semibold))
             Text("We'll mix what \(profile.name) loves with your gifting style, then check prices.")
                 .font(.subheadline).foregroundStyle(.secondary).multilineTextAlignment(.center)

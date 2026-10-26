@@ -90,7 +90,7 @@ struct OnboardingView: View {
             Image(systemName: "bell.badge.fill")
                 .font(.system(size: 60))
                 .foregroundStyle(Theme.coral)
-                .symbolEffect(.wiggle, options: .repeat(.periodic(delay: 1.5)))
+                .symbolEffect(.wiggle, options: .repeat(.periodic(3, delay: 1.5)))
                 .frame(width: 128, height: 128)
                 .glassEffect(.regular, in: .circle)
             Text("Get told when prices drop").font(.largeTitle.weight(.bold)).multilineTextAlignment(.center)

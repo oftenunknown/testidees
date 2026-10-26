@@ -187,7 +187,6 @@ struct EmptyStateView: View {
             Image(systemName: symbol)
                 .font(.system(size: 44, weight: .semibold))
                 .foregroundStyle(Theme.brandGradient)
-                .symbolEffect(.breathe, options: .repeating)
             Text(title).font(.title3.weight(.semibold))
             Text(message)
                 .font(.subheadline)
