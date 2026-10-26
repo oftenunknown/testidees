@@ -8,7 +8,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-26, macos-latest]
+        os: [xcode-27]
     steps:
       - name: Toolchains
         run: |
@@ -18,4 +18,6 @@ jobs:
           xcodebuild -showsdks
           swift --version
           xcrun simctl list devices available | head -80
-          which xcodegen || brew info xcodegen | head -3
+          which xcodegen || true
+          xcrun --sdk iphoneos --show-sdk-version
+          ls /Applications
