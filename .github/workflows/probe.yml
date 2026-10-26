@@ -4,20 +4,38 @@ on:
     paths: ['.github/workflows/probe.yml']
 jobs:
   probe:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [xcode-27]
+    runs-on: xcode-27
     steps:
-      - name: Toolchains
+      - name: Dump SDK API declarations
         run: |
-          sw_vers
-          ls -d /Applications/Xcode*.app || true
-          xcodebuild -version
-          xcodebuild -showsdks
-          swift --version
-          xcrun simctl list devices available | head -80
-          which xcodegen || true
-          xcrun --sdk iphoneos --show-sdk-version
-          ls /Applications
+          SDK=$(xcrun --sdk iphoneos --show-sdk-path)
+          echo "SDK=$SDK"
+          FW="$SDK/System/Library/Frameworks"
+          out=api-dump; mkdir -p $out
+          for f in SwiftUI UIKit FoundationModels ImagePlayground VisionKit Vision StoreKit BackgroundTasks; do
+            iface=$(find "$FW/$f.framework" -name "arm64e-apple-ios.swiftinterface" -o -name "arm64-apple-ios.swiftinterface" | head -1)
+            echo "$f -> $iface"
+            [ -n "$iface" ] && cp "$iface" "$out/$f.swiftinterface"
+          done
+          # SwiftUI core may live in SwiftUICore
+          iface=$(find "$FW/SwiftUICore.framework" -name "arm64e-apple-ios.swiftinterface" | head -1); [ -n "$iface" ] && cp "$iface" "$out/SwiftUICore.swiftinterface"
+          cd $out
+          ls -la
+          echo "===== DUO / iOS 27 SwiftUI ====="
+          grep -n -E "ReservedRegion|reservedRegion|onHingeChange|DeviceHinge|ArrangementView|arrangementViewStyle|splitArrangement|toolbarVerticalBehavior|toolbarVerticalEdge|axisBehavior|toolbarVerticalCompression|defaultTabBarPlacement|TabBarPlacement" SwiftUI.swiftinterface SwiftUICore.swiftinterface | grep -v "^.*//" | head -150
+          echo "===== GLASS ====="
+          grep -n -E "func glassEffect|struct Glass\b|GlassEffectContainer|func glassEffectID|glassEffectUnion|glassEffectTransition|static var glass|GlassButtonStyle|GlassProminent|backgroundExtensionEffect|tabViewBottomAccessory|tabBarMinimizeBehavior|ConcentricRectangle|scrollEdgeEffectStyle|ToolbarSpacer|sharedBackgroundVisibility" SwiftUI.swiftinterface SwiftUICore.swiftinterface | head -120
+          echo "===== FoundationModels ====="
+          grep -n -E "public (final )?(class|struct|enum|protocol|actor) |public func respond|public func streamResponse|public init|availability|case unavailable" FoundationModels.swiftinterface | head -120
+          echo "===== ImagePlayground ====="
+          grep -n -E "ImageCreator|public func images|public static var|Style|CreatedImage|ImagePlaygroundConcept" ImagePlayground.swiftinterface | head -80
+          echo "===== VisionKit DataScanner ====="
+          grep -n -E "DataScannerViewController|RecognizedDataType|RecognizedItem|isSupported|isAvailable|startScanning" VisionKit.swiftinterface | head -60
+          echo "===== Vision ====="
+          grep -n -E "struct ClassifyImageRequest|struct RecognizeTextRequest|ClassificationObservation|RecognizedTextObservation|public func perform" Vision.swiftinterface | head -40
+          echo "===== StoreKit SubscriptionStoreView ====="
+          grep -n -E "SubscriptionStoreView|subscriptionStoreControlStyle|AppTransaction|environment" StoreKit.swiftinterface | head -40
+      - uses: actions/upload-artifact@v4
+        with:
+          name: api-dump
+          path: api-dump
