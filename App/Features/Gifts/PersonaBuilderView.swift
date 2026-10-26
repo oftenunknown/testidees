@@ -176,29 +176,8 @@ struct PersonaBuilderView: View {
         .buttonStyle(.plain)
     }
 
-    private func sourceLabel(symbol: String, color: Color, title: String, detail: String, done: Bool, premium: Bool) -> some View {
-        HStack(spacing: 14) {
-            Image(systemName: symbol)
-                .font(.title3)
-                .foregroundStyle(.white)
-                .frame(width: 44, height: 44)
-                .background(color.gradient, in: .rect(cornerRadius: 13))
-            VStack(alignment: .leading, spacing: 3) {
-                HStack(spacing: 6) {
-                    Text(title).font(.headline)
-                    if premium && !model.isPremium {
-                        Image(systemName: "crown.fill").font(.caption).foregroundStyle(.yellow)
-                    }
-                }
-                Text(detail).font(.caption).foregroundStyle(.secondary).multilineTextAlignment(.leading)
-            }
-            Spacer(minLength: 0)
-            Image(systemName: done ? "checkmark.circle.fill" : "chevron.right")
-                .foregroundStyle(done ? Color.green : Color.secondary)
-        }
-        .padding(14)
-        .contentShape(.rect)
-        .background(.background.secondary.opacity(0.75), in: .rect(cornerRadius: 20))
+    private func sourceLabel(symbol: String, color: Color, title: String, detail: String, done: Bool, premium: Bool) -> SourceRow {
+        SourceRow(symbol: symbol, color: color, title: title, detail: detail, done: done, locked: premium && !model.isPremium)
     }
 
     @ViewBuilder
@@ -407,5 +386,41 @@ struct PersonaQuizView: View {
         model.persona = persona
         model.showToast("You're \(persona.archetype.name)!", symbol: persona.archetype.symbol)
         dismiss()
+    }
+}
+
+/// One way of teaching Snag about you. A plain value type so it can be
+/// handed to PhotosPicker's label closure.
+struct SourceRow: View {
+    var symbol: String
+    var color: Color
+    var title: String
+    var detail: String
+    var done: Bool
+    var locked: Bool
+
+    var body: some View {
+        HStack(spacing: 14) {
+            Image(systemName: symbol)
+                .font(.title3)
+                .foregroundStyle(.white)
+                .frame(width: 44, height: 44)
+                .background(color.gradient, in: .rect(cornerRadius: 13))
+            VStack(alignment: .leading, spacing: 3) {
+                HStack(spacing: 6) {
+                    Text(title).font(.headline)
+                    if locked {
+                        Image(systemName: "crown.fill").font(.caption).foregroundStyle(.yellow)
+                    }
+                }
+                Text(detail).font(.caption).foregroundStyle(.secondary).multilineTextAlignment(.leading)
+            }
+            Spacer(minLength: 0)
+            Image(systemName: done ? "checkmark.circle.fill" : "chevron.right")
+                .foregroundStyle(done ? Color.green : Color.secondary)
+        }
+        .padding(14)
+        .contentShape(.rect)
+        .background(.background.secondary.opacity(0.75), in: .rect(cornerRadius: 20))
     }
 }

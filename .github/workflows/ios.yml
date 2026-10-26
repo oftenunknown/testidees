@@ -53,9 +53,14 @@ jobs:
           # inner display, so it previews the unfolded two-pane layouts.
           for device in "iPhone 18 Pro" "iPhone 18 Pro Max" "iPhone Duo" "iPad mini (A17 Pro)"; do
             slug=$(echo "$device" | tr -cs 'A-Za-z0-9' '-' | sed 's/-$//')
+            # The runner has 3 CPUs / 7 GB: run one simulator at a time and
+            # wait for it to finish booting before XCTest tries to launch the app.
+            xcrun simctl shutdown all || true
+            udid=$(xcrun simctl list devices available -j | python3 -c "import json,sys; n=sys.argv[1]; print(next(d['udid'] for r in json.load(sys.stdin)['devices'].values() for d in r if d['name']==n))" "$device")
+            xcrun simctl bootstatus "$udid" -b
             xcodebuild test-without-building \
               -project Snag.xcodeproj -scheme Snag \
-              -destination "platform=iOS Simulator,name=$device" \
+              -destination "id=$udid" \
               -derivedDataPath build \
               -resultBundlePath "results/$slug.xcresult" 2>&1 | xcbeautify --renderer github-actions || echo "::warning::UI tests failed on $device"
             mkdir -p "screenshots/$slug"
