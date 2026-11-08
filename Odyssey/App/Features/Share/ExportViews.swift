@@ -4,8 +4,8 @@ import OdysseyKit
 /// Fixed-size compositions for exported images. They reuse the story's views
 /// (with a fixed animation clock), so what you share looks like what you saw.
 enum ExportLayout {
-    /// 9:16 in points; rendered at 2.7× for 1080 × 1920.
-    static let page = CGSize(width: 400, height: 711)
+    /// 9:16 in points; rendered at 2.7× for exactly 1080 × 1920.
+    static let page = CGSize(width: 400, height: 400 * 16 / 9)
     static let longWidth: CGFloat = 400
 }
 

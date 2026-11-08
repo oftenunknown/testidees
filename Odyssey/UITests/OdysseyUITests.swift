@@ -72,11 +72,25 @@ final class OdysseyUITests: XCTestCase {
                 _ = app.buttons["export-share"].firstMatch.waitForExistence(timeout: 20)
                 snapshot("08-Share-Card-Ready")
             }
-            let long = app.segmentedControls["export-format"].buttons.element(boundBy: 1)
+            let formats = app.segmentedControls["export-format"].buttons
+            let long = formats.element(boundBy: 1)
             if long.exists {
                 long.tap()
                 sleep(4)
                 snapshot("09-Share-Long")
+            }
+            // The animated formats take a while to render, so only the iPad run checks them.
+            if app.windows.firstMatch.frame.width > 700 {
+                for (index, name) in [(3, "GIF"), (4, "Video")] {
+                    let format = formats.element(boundBy: index)
+                    guard format.exists else { continue }
+                    format.tap()
+                    sleep(2)
+                    app.buttons["export-create"].firstMatch.tap()
+                    _ = app.buttons["export-share"].firstMatch.waitForExistence(timeout: 240)
+                    sleep(2)
+                    snapshot("09-Share-\(name)")
+                }
             }
             app.buttons["Close"].firstMatch.tap()
             sleep(1)

@@ -105,7 +105,8 @@ enum ExportRenderer {
             for frame in 0...animatedFrames {
                 try Task.checkCancellation()
                 let t = Double(frame) / Double(animatedFrames)
-                guard let image = image(ExportPage(page: page, env: env, progress: t), scale: scale) else { continue }
+                // ImageIO expects exactly `total` frames, so a missing one is an error.
+                guard let image = image(ExportPage(page: page, env: env, progress: t), scale: scale) else { throw ExportError.renderFailed }
                 let delay = frame == animatedFrames ? 1.6 : 1 / fps
                 let properties = [kCGImagePropertyGIFDictionary as String: [
                     kCGImagePropertyGIFDelayTime as String: delay,

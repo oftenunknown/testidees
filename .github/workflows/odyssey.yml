@@ -72,8 +72,8 @@ jobs:
               -destination "id=$udid" \
               -derivedDataPath build \
               -test-timeouts-enabled YES \
-              -default-test-execution-time-allowance 480 \
-              -maximum-test-execution-time-allowance 600 \
+              -default-test-execution-time-allowance 900 \
+              -maximum-test-execution-time-allowance 1200 \
               -resultBundlePath "results/$slug.xcresult" 2>&1 | xcbeautify --renderer github-actions || echo "::warning::UI tests failed on $device"
             mkdir -p "screenshots/$slug"
             xcrun xcresulttool export attachments --path "results/$slug.xcresult" --output-path "screenshots/$slug" || true
