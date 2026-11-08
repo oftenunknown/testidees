@@ -1,0 +1,89 @@
+name: Odyssey TestFlight
+
+# Builds a signed Odyssey release and uploads it to App Store Connect / TestFlight.
+# Run it from the Actions tab ("Run workflow") or push a tag like odyssey-testflight-1.
+#
+# Uses the same repository secrets as the Snag TestFlight workflow
+# (ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_P8, APPLE_TEAM_ID — see docs/TESTFLIGHT.md).
+# Optional repository variables:
+#   ODYSSEY_BUNDLE_ID      Defaults to com.oftenunknown.odyssey
+#   STRAVA_CLIENT_ID       Your Strava API app's Client ID, baked into the build
+#   ODYSSEY_TOKEN_SERVER   https URL of Odyssey/backend, so testers don't need your client secret
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ["odyssey-testflight-*"]
+
+defaults:
+  run:
+    working-directory: Odyssey
+
+jobs:
+  upload:
+    runs-on: xcode-27
+    env:
+      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+      ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      BUNDLE_ID: ${{ vars.ODYSSEY_BUNDLE_ID || 'com.oftenunknown.odyssey' }}
+      STRAVA_CLIENT_ID: ${{ vars.STRAVA_CLIENT_ID }}
+      ODYSSEY_TOKEN_SERVER: ${{ vars.ODYSSEY_TOKEN_SERVER }}
+      BUILD_NUMBER: ${{ github.run_number }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check secrets
+        run: |
+          missing=""
+          for v in ASC_KEY_ID ASC_ISSUER_ID ASC_KEY_P8 APPLE_TEAM_ID; do
+            [ -z "${!v}" ] && missing="$missing $v"
+          done
+          if [ -n "$missing" ]; then
+            echo "::error::Missing repository secrets:$missing. See docs/TESTFLIGHT.md."
+            exit 1
+          fi
+
+      - name: Prepare
+        run: |
+          brew list xcodegen >/dev/null 2>&1 || brew install xcodegen
+          xcodegen generate
+          mkdir -p "$RUNNER_TEMP/keys"
+          printf '%s' "$ASC_KEY_P8" > "$RUNNER_TEMP/keys/AuthKey_$ASC_KEY_ID.p8"
+          sed -e "s/__TEAM_ID__/$APPLE_TEAM_ID/" ../ci/ExportOptions.plist > "$RUNNER_TEMP/ExportOptions.plist"
+
+      - name: Archive
+        run: |
+          set -o pipefail
+          xcodebuild archive \
+            -project Odyssey.xcodeproj -scheme Odyssey -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath build/Odyssey.xcarchive \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$RUNNER_TEMP/keys/AuthKey_$ASC_KEY_ID.p8" \
+            -authenticationKeyID "$ASC_KEY_ID" \
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
+            DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
+            PRODUCT_BUNDLE_IDENTIFIER="$BUNDLE_ID" \
+            CURRENT_PROJECT_VERSION="$BUILD_NUMBER" \
+            STRAVA_CLIENT_ID="$STRAVA_CLIENT_ID" \
+            ODYSSEY_TOKEN_SERVER="$ODYSSEY_TOKEN_SERVER" 2>&1 | xcbeautify --renderer github-actions
+
+      - name: Upload to TestFlight
+        run: |
+          set -o pipefail
+          xcodebuild -exportArchive \
+            -archivePath build/Odyssey.xcarchive \
+            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" \
+            -exportPath build/export \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$RUNNER_TEMP/keys/AuthKey_$ASC_KEY_ID.p8" \
+            -authenticationKeyID "$ASC_KEY_ID" \
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID" 2>&1 | xcbeautify --renderer github-actions
+          echo "### Uploaded Odyssey build $BUILD_NUMBER to App Store Connect" >> "$GITHUB_STEP_SUMMARY"
+          echo "It appears in TestFlight after Apple finishes processing (usually 5–20 minutes)." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Clean up key
+        if: always()
+        run: rm -rf "$RUNNER_TEMP/keys"

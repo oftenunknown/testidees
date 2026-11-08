@@ -1,0 +1,96 @@
+# XcodeGen spec. Generate the Xcode project with:  cd Odyssey && xcodegen generate
+name: Odyssey
+options:
+  bundleIdPrefix: com.oftenunknown
+  deploymentTarget:
+    iOS: "27.0"
+  xcodeVersion: "27.1"
+  createIntermediateGroups: true
+  developmentLanguage: en
+
+settings:
+  base:
+    MARKETING_VERSION: "1.0.0"
+    CURRENT_PROJECT_VERSION: "1"
+    SWIFT_VERSION: "6.0"
+    SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor
+    SWIFT_APPROACHABLE_CONCURRENCY: YES
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+    DEAD_CODE_STRIPPING: YES
+    # Optional build-time defaults (CI passes them for TestFlight builds).
+    # Both can also be entered in the app under Settings → Strava API app.
+    STRAVA_CLIENT_ID: ""
+    ODYSSEY_TOKEN_SERVER: ""
+
+packages:
+  OdysseyKit:
+    path: Packages/OdysseyKit
+
+targets:
+  Odyssey:
+    type: application
+    platform: iOS
+    sources:
+      - path: App
+        excludes:
+          - "**/*.md"
+          - "Info.plist"
+    dependencies:
+      - package: OdysseyKit
+    info:
+      path: App/Info.plist
+      properties:
+        CFBundleDisplayName: Odyssey
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        LSApplicationCategoryType: public.app-category.healthcare-fitness
+        ITSAppUsesNonExemptEncryption: false
+        UILaunchScreen:
+          UIColorName: LaunchBackground
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: true
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        CFBundleURLTypes:
+          - CFBundleURLName: com.oftenunknown.odyssey
+            CFBundleURLSchemes: [odysseyrecap]
+        # Lets the app check whether the Strava app is installed for one-tap sign-in.
+        LSApplicationQueriesSchemes: [strava]
+        NSPhotoLibraryAddUsageDescription: Odyssey saves the recap images, GIFs and videos you create to your photo library.
+        OdysseyStravaClientID: $(STRAVA_CLIENT_ID)
+        OdysseyTokenServer: $(ODYSSEY_TOKEN_SERVER)
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.oftenunknown.odyssey
+        PRODUCT_NAME: Odyssey
+        TARGETED_DEVICE_FAMILY: "1,2"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        CODE_SIGN_STYLE: Automatic
+        ENABLE_PREVIEWS: YES
+        GENERATE_INFOPLIST_FILE: NO
+        SUPPORTS_MACCATALYST: NO
+        SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: NO
+    scheme:
+      testTargets:
+        - OdysseyUITests
+
+  OdysseyUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources: [UITests]
+    dependencies:
+      - target: Odyssey
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.oftenunknown.odyssey.uitests
+        GENERATE_INFOPLIST_FILE: YES
+        CODE_SIGN_STYLE: Automatic
+        SWIFT_DEFAULT_ACTOR_ISOLATION: nonisolated

@@ -5,6 +5,9 @@ on:
     paths-ignore:
       - "backend/**"
       - "**/*.md"
+      # Odyssey has its own workflow (odyssey.yml).
+      - "Odyssey/**"
+      - ".github/workflows/odyssey*.yml"
   pull_request:
   workflow_dispatch:
 
