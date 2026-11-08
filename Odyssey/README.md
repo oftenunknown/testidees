@@ -28,9 +28,10 @@ display, the unfolded layout (iPad mini stand-in) and sharing below.</sub>
 | **Your routes** | Route art: every route as a line drawing (no map, ends trimmed) |
 | **Persona** | The Dawn Patrol, The Metronome, The Mountain Goat… with the evidence |
 
-Distances use great-circle maths for city pairs and commonly cited lengths
-for routes (Silk Road ≈ 6,400 km, Columbus's 1492 crossing ≈ 7,090 km
-via the Canaries, Route 66 ≈ 3,940 km), always marked "≈".
+City pairs and Columbus's 1492 crossing (≈ 7,090 km via the Canaries) are
+great-circle distances between their waypoints; trails and roads use their
+commonly cited lengths (Silk Road ≈ 6,400 km, Route 66 ≈ 3,940 km,
+Appalachian Trail ≈ 3,530 km). Every comparison is marked "≈".
 
 ## Sharing
 
