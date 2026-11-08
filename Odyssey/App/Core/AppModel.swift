@@ -327,10 +327,23 @@ final class AppModel {
         await sync()
     }
 
+    /// Ranges this view needs: the selected one and the period before it (for comparisons).
+    private var wantedRanges: [DayRange] {
+        [range.effectiveDays(today: today), range.previousComparable(today: today)]
+    }
+
+    /// Whether any wanted range has never been fetched (ignores the routine refresh of recent days).
+    private var hasGaps: Bool {
+        let now = Date()
+        return wantedRanges.contains { days in
+            let span = TimeSpan.covering(days)
+            return !library.missing(TimeSpan(start: span.start, end: min(span.end, now))).isEmpty
+        }
+    }
+
     private func syncIfNeededForRange() async {
-        guard !settings.demoMode, isConnected, !syncState.isBusy else { return }
-        let wanted = [range.effectiveDays(today: today), range.previousComparable(today: today)]
-        if !library.syncPlan(for: wanted, now: Date()).isEmpty { await sync() }
+        guard !settings.demoMode, isConnected, !syncState.isBusy, hasGaps else { return }
+        await sync()
     }
 
     /// Fetches whatever the selected range (and the period before it) still
@@ -347,8 +360,7 @@ final class AppModel {
                 syncState = .syncing("Reading your profile…")
                 library.athlete = try await client.athlete()
             }
-            let wanted = [range.effectiveDays(today: today), range.previousComparable(today: today)]
-            let plan = library.syncPlan(for: wanted, now: Date())
+            let plan = library.syncPlan(for: wantedRanges, now: Date())
             for (i, span) in plan.enumerated() {
                 syncState = .syncing(plan.count > 1 ? "Fetching activities (\(i + 1)/\(plan.count))…" : "Fetching activities…")
                 let fetched = try await client.allActivities(after: span.start, before: span.end)
@@ -360,10 +372,12 @@ final class AppModel {
             persistLibrary()
             try await enrichDetails(client: client)
             syncState = .idle
+            // The range may have changed while we were busy.
+            if hasGaps { await sync() }
         } catch StravaError.rateLimited(let status) {
             let until = status?.resumeDate(needing: 10, at: Date()) ?? RateLimitStatus.nextShortWindow(after: Date())
             syncState = .rateLimited(until: until)
-            persistLibrary()
+            publishLibrary()
             scheduleResume(at: until)
         } catch StravaError.unauthorized {
             syncState = .failed("Strava signed you out. Connect again in Settings.")
@@ -372,18 +386,31 @@ final class AppModel {
             self.session = nil
         } catch {
             syncState = .failed(error.localizedDescription)
+            publishLibrary()
         }
+    }
+
+    /// Shows and saves whatever has been fetched so far.
+    private func publishLibrary() {
+        activities = library.activities
+        scheduleRecompute()
+        persistLibrary()
     }
 
     private func enrichDetails(client: StravaClient) async throws {
         let inRange = library.activities(in: range.effectiveDays(today: today))
-        let remaining = rateLimit.map { $0.shortRemaining(at: Date()) - 10 } ?? 60
+        let remaining = rateLimit.map { min($0.shortRemaining(at: Date()), $0.dailyRemaining(at: Date())) - 10 } ?? 60
         let ids = DetailPlanner.candidates(in: inRange, limit: max(0, min(settings.detailBudget, remaining)))
         guard !ids.isEmpty else { return }
         for (i, id) in ids.enumerated() {
             syncState = .enriching(done: i, total: ids.count)
-            let (_, details) = try await client.detailedActivity(id: id)
-            library.attach(details, to: id)
+            do {
+                let (_, details) = try await client.detailedActivity(id: id)
+                library.attach(details, to: id)
+            } catch StravaError.notFound, StravaError.forbidden {
+                // Deleted or hidden since the list was fetched: remember, don't retry forever.
+                library.attach(ActivityDetails(), to: id)
+            }
             if i % 8 == 7 {
                 activities = library.activities
                 scheduleRecompute()
@@ -392,9 +419,7 @@ final class AppModel {
                 throw StravaError.rateLimited(limit)
             }
         }
-        activities = library.activities
-        scheduleRecompute()
-        persistLibrary()
+        publishLibrary()
     }
 
     private func scheduleResume(at date: Date) {

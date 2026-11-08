@@ -296,8 +296,10 @@ struct AnimatedImageView: UIViewRepresentable {
         let count = CGImageSourceGetCount(source)
         var frames: [UIImage] = []
         var duration = 0.0
+        // Preview-sized frames: a full-resolution decode of every frame adds up fast.
+        let thumbnail = [kCGImageSourceCreateThumbnailFromImageAlways: true, kCGImageSourceThumbnailMaxPixelSize: 520] as CFDictionary
         for i in 0..<count {
-            guard let image = CGImageSourceCreateImageAtIndex(source, i, nil) else { continue }
+            guard let image = CGImageSourceCreateThumbnailAtIndex(source, i, thumbnail) else { continue }
             let properties = CGImageSourceCopyPropertiesAtIndex(source, i, nil) as? [CFString: Any]
             let gif = properties?[kCGImagePropertyGIFDictionary] as? [CFString: Any]
             let delay = (gif?[kCGImagePropertyGIFUnclampedDelayTime] as? Double) ?? (gif?[kCGImagePropertyGIFDelayTime] as? Double) ?? 0.1

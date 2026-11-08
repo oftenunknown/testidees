@@ -782,23 +782,26 @@ struct StoryPageParts {
     @ViewBuilder
     private func crewVisual(_ s: CGFloat) -> some View {
         if env.showNames, let top = recap.crew.companions.first {
-            let together = EquivalentFinder.headline(forKm: top.distance / 1000)
-            VStack(spacing: 12 * s) {
-                CrewConstellation(companions: recap.crew.companions, initialsOfYou: recap.athleteFirstName.map { CrewConstellation.initials($0) } ?? "You",
-                                  progress: Easing.segment(progress, 0, 0.6), accent: theme.accent)
-                // The distance you covered together, drawn as a trip of its own.
-                if let together, together.journey.isMappable {
-                    VStack(alignment: .leading, spacing: 4 * s) {
-                        JourneyMap(journey: together.journey, progress: Easing.segment(progress, 0.45, 1), completed: together.multiple,
-                                   accent: theme.accent, showLabels: false)
-                        Text("You & \(top.name): \(n.journeyLine(together))")
-                            .font(.system(size: 13 * s, weight: .bold, design: .rounded))
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.7)
-                            .opacity(reveal(0.7, 1))
+            let together = EquivalentFinder.headline(forKm: top.distance / 1000).flatMap { $0.journey.isMappable ? $0 : nil }
+            GeometryReader { proxy in
+                let gap = 12 * s
+                VStack(spacing: gap) {
+                    CrewConstellation(companions: recap.crew.companions, initialsOfYou: recap.athleteFirstName.map { CrewConstellation.initials($0) } ?? "You",
+                                      progress: Easing.segment(progress, 0, 0.6), accent: theme.accent)
+                        .frame(height: together == nil ? proxy.size.height : proxy.size.height * 0.56)
+                    // The distance you covered together, drawn as a trip of its own.
+                    if let together {
+                        VStack(alignment: .leading, spacing: 4 * s) {
+                            JourneyMap(journey: together.journey, progress: Easing.segment(progress, 0.45, 1), completed: together.multiple,
+                                       accent: theme.accent, showLabels: false)
+                            Text("You & \(top.name): \(n.journeyLine(together))")
+                                .font(.system(size: 13 * s, weight: .bold, design: .rounded))
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.7)
+                                .opacity(reveal(0.7, 1))
+                        }
+                        .frame(height: max(0, proxy.size.height * 0.44 - gap))
                     }
-                    .frame(maxHeight: .infinity)
-                    .layoutPriority(-1)
                 }
             }
         } else {
