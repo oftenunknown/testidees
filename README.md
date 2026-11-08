@@ -1,5 +1,8 @@
 # Snag — deals, price alerts & gifts that feel like you
 
+> This repository holds two apps: **Snag** (below) and **[Odyssey](Odyssey/README.md)**,
+> an animated, shareable year-in-sport recap built on your Strava data.
+
 An iOS 27 app (SwiftUI, Liquid Glass) for finding the best price on anything,
 checking in a shop whether a price is good, watching prices, and getting gift
 ideas that blend the recipient's interests with *your* personality.

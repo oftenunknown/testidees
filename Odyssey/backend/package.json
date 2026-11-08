@@ -1,0 +1,19 @@
+{
+  "name": "odyssey-token-server",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Optional token server for Odyssey: keeps your Strava client secret off the phone.",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20261001.0",
+    "typescript": "^5.9.0 || ^6.0.0",
+    "vitest": "^5.0.0",
+    "wrangler": "^4.40.0"
+  }
+}
