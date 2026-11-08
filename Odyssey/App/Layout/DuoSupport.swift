@@ -108,19 +108,3 @@ struct FoldAwareSplit<Primary: View, Secondary: View>: View {
         }
     }
 }
-
-/// Stacks vertically on compact screens and side by side on wide ones,
-/// animating between the two when iPhone Duo is unfolded (AnyLayout keeps
-/// view identity, so content glides rather than reloads).
-struct AdaptiveStack<Content: View>: View {
-    var isWide: Bool
-    var spacing: CGFloat = 20
-    @ViewBuilder var content: Content
-
-    var body: some View {
-        let layout = isWide
-            ? AnyLayout(HStackLayout(alignment: .top, spacing: spacing))
-            : AnyLayout(VStackLayout(alignment: .leading, spacing: spacing))
-        layout { content }
-    }
-}

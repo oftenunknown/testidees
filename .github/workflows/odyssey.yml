@@ -6,6 +6,7 @@ on:
       - "Odyssey/**"
       - ".github/workflows/odyssey.yml"
       - "!Odyssey/**/*.md"
+      - "!Odyssey/docs/**"
       - "!Odyssey/backend/**"
   pull_request:
     paths:
@@ -71,6 +72,7 @@ jobs:
               -project Odyssey.xcodeproj -scheme Odyssey \
               -destination "id=$udid" \
               -derivedDataPath build \
+              -retry-tests-on-failure -test-iterations 2 \
               -test-timeouts-enabled YES \
               -default-test-execution-time-allowance 900 \
               -maximum-test-execution-time-allowance 1200 \

@@ -31,7 +31,7 @@ struct ConnectView: View {
         .scrollBounceBehavior(.basedOnSize)
         .background(isOnboarding ? AnyView(HomeBackdrop()) : AnyView(Color.clear))
         .sheet(isPresented: $showSetup) {
-            SettingsView(focusOnStrava: true)
+            SettingsView()
                 .environment(model)
                 .environment(settings)
         }

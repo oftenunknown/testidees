@@ -5,7 +5,6 @@ struct SettingsView: View {
     @Environment(AppModel.self) private var model
     @Environment(AppSettings.self) private var settings
     @Environment(\.dismiss) private var dismiss
-    var focusOnStrava = false
     @State private var secret = ""
     @State private var confirmDisconnect = false
 

@@ -5,6 +5,11 @@ animated, shareable recap — for a year, or any quarter, month, week or custom
 date range. Built for iPhone 18 / 18 Pro / Pro Max and iPhone Duo (outer and
 inner displays, and half-folded).
 
+![The story on iPhone 18 Pro Max](docs/screenshots/story-iphone.jpg)
+
+<sub>Screenshots from CI with demo data: iPhone 18 Pro Max above; iPhone Duo's outer
+display, the unfolded layout (iPad mini stand-in) and sharing below.</sub>
+
 ## What it shows
 
 | Page | Example (demo data, 2026) |
@@ -29,6 +34,8 @@ via the Canaries, Route 66 ≈ 3,940 km), always marked "≈".
 
 ## Sharing
 
+![Share studio: card, long image and GIF](docs/screenshots/share.jpg)
+
 **Share** (home toolbar, or the last story page) makes:
 
 - **Card** — one 1080 × 1920 summary, story-sized
@@ -42,6 +49,10 @@ Exports reuse the story's own views, rendered frame by frame from the same
 toggles hide companion names and route art.
 
 ## iPhone Duo and iPhone 18
+
+![iPhone Duo outer display: controls and tabs live in the vertical side bar](docs/screenshots/iphone-duo-outer.jpg)
+
+![Unfolded: each page becomes a two-page spread](docs/screenshots/inner-display-spreads.jpg)
 
 - **Outer display (folded):** one story page at a time; the close / pause /
   share buttons are toolbar items, so iOS 27.1 moves them into the vertical
