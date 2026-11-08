@@ -55,7 +55,7 @@ public enum StoryScript {
     /// The highlights for the "big moments" page, best first, without repeats
     /// of the same activity.
     public static func moments(for recap: Recap, limit: Int = 4) -> [Highlight] {
-        let order: [Highlight.Kind] = [.race, .longest, .biggestClimb, .fastestRun, .furthestAway, .mostKudos, .fastestRide, .earliestStart, .longestSwim, .biggestGroup, .latestStart, .longestDuration]
+        let order: [Highlight.Kind] = [.race, .personalBest, .longest, .biggestClimb, .fastestRun, .furthestAway, .mostKudos, .fastestRide, .earliestStart, .longestSwim, .biggestGroup, .latestStart, .longestDuration]
         var out: [Highlight] = []
         var used = Set<Int64>()
         for kind in order {

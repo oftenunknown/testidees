@@ -51,7 +51,8 @@ struct StoryPlayerView: View {
         let page = pages[index]
         return GeometryReader { proxy in
             let mode = layoutMode(for: proxy.size)
-            ProgressClock(duration: 2.2, animate: !reduceMotion, key: page) { progress in
+            // UI tests screenshot the settled page; skipping the entrance animation keeps the app idle.
+            ProgressClock(duration: 2.2, animate: !reduceMotion && !model.launch.isUITesting, key: page) { progress in
                 StoryPageView(page: page, env: environment(recap), progress: progress, mode: mode)
             }
             .id(page)

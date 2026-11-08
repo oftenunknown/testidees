@@ -33,7 +33,7 @@ struct StoryPageView: View {
 
     var body: some View {
         let theme = PageTheme.page(page, persona: env.recap.persona.primary)
-        let parts = StoryPageParts(page: page, env: env, progress: progress, theme: theme)
+        let parts = StoryPageParts(page: page, env: env, progress: progress, theme: theme, centered: mode != .portrait)
         ZStack {
             PageBackground(theme: theme)
                 .ignoresSafeArea()
@@ -90,8 +90,8 @@ struct StoryPageView: View {
 enum StoryMetrics {
     /// 1.0 on a 402-pt-wide phone; smaller on the Duo's short outer display, bigger on wide screens.
     static func scale(for size: CGSize, spread: Bool = false) -> CGFloat {
-        let byWidth = size.width / (spread ? 420 : 400)
-        let byHeight = size.height / (spread ? 640 : 820)
+        let byWidth = size.width / (spread ? 360 : 400)
+        let byHeight = size.height / (spread ? 560 : 820)
         return min(max(min(byWidth, byHeight), 0.62), 1.45)
     }
 }
@@ -102,6 +102,8 @@ struct StoryPageParts {
     var env: StoryEnvironment
     var progress: Double
     var theme: PageTheme
+    /// Spread and tabletop panes centre their content; portrait stacks it under the words.
+    var centered = false
 
     private var recap: Recap { env.recap }
     private var units: Units { env.units }
@@ -346,7 +348,7 @@ struct StoryPageParts {
     private func progressText(_ s: CGFloat) -> some View {
         let p = recap.progression
         kicker("Progress", scale: s)
-        if let pace = p.runPace, pace.end < pace.start * 0.995 {
+        if let pace = p.runPace, pace.end < pace.start * 0.98 {
             appear(headline("Your runs got faster", scale: s * 1.1), 0, 0.3)
             appear(line("Average pace \(units.paceNumber(secondsPerMeter: pace.start)) → \(units.pace(secondsPerMeter: pace.end))", scale: s), 0.2, 0.45)
         } else if let change = p.vsPrevious?.distance {
@@ -379,6 +381,9 @@ struct StoryPageParts {
         }
         if let star = pb.headline.max(by: { $0.improvement < $1.improvement }), star.improvement > 0 {
             appear(headline("\(star.distance.title): \(Units.clock(star.first.time)) → \(Units.clock(star.best.time))", scale: s * 0.85), 0.35, 0.6)
+        }
+        if let moment = recap.highlight(.personalBest) {
+            appear(line(n.headline(moment), scale: s * 0.9, opacity: 0.85), 0.5, 0.75)
         }
         if pb.runsChecked < pb.runsTotal, !env.isExport {
             appear(line("Checked \(pb.runsChecked) of \(pb.runsTotal) runs so far", scale: s * 0.75, weight: .medium, opacity: 0.6), 0.6, 0.9)
@@ -482,8 +487,13 @@ struct StoryPageParts {
 
     // MARK: - Visuals
 
-    @ViewBuilder
     func visual(scale s: CGFloat) -> some View {
+        visualContent(scale: s)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: centered ? .center : .top)
+    }
+
+    @ViewBuilder
+    private func visualContent(scale s: CGFloat) -> some View {
         switch page {
         case .intro: introVisual(s)
         case .totals: totalsVisual(s)
@@ -491,12 +501,19 @@ struct StoryPageParts {
         case .climb:
             if let c = recap.equivalents.climb {
                 ClimbStack(multiple: c.multiple, kind: c.landmark.kind, progress: Easing.segment(progress, 0.25, 1), accent: theme.accent)
+                    .aspectRatio(0.85, contentMode: .fit)
                     .padding(.top, 10)
             }
         case .time: timeVisual(s)
         case .rhythm:
-            CalendarHeatmap(days: recap.calendar.activeDays, range: recap.days, firstWeekday: env.firstWeekday,
-                            progress: Easing.segment(progress, 0.1, 1), color: theme.accent, useTime: t.distance < 5000)
+            if recap.days.count > 45 {
+                MonthGridHeatmap(days: recap.calendar.activeDays, range: recap.days, firstWeekday: env.firstWeekday,
+                                 progress: Easing.segment(progress, 0.1, 1), color: theme.accent, useTime: t.distance < 5000, format: n.format)
+            } else {
+                CalendarHeatmap(days: recap.calendar.activeDays, range: recap.days, firstWeekday: env.firstWeekday,
+                                progress: Easing.segment(progress, 0.1, 1), color: theme.accent, useTime: t.distance < 5000)
+                    .aspectRatio(1.4, contentMode: .fit)
+            }
         case .clock:
             VStack(spacing: 18 * s) {
                 HourClock(hourCounts: recap.rhythm.hourCounts, peak: recap.rhythm.peakHour, progress: progress, accent: theme.accent)
@@ -591,7 +608,6 @@ struct StoryPageParts {
                 .opacity(r)
                 .offset(x: (1 - r) * 40)
             }
-            Spacer(minLength: 0)
         }
     }
 
@@ -599,6 +615,7 @@ struct StoryPageParts {
     private func journeyVisual(_ s: CGFloat) -> some View {
         if let e = recap.equivalents.headline, e.journey.isMappable || e.journey.kind == .planet {
             JourneyMap(journey: e.journey, progress: Easing.segment(progress, 0.2, 1), completed: e.multiple, accent: theme.accent)
+                .aspectRatio(0.9, contentMode: .fit)
         } else {
             VStack(spacing: 12 * s) {
                 TrackLaps(laps: recap.equivalents.trackLaps, progress: progress, accent: theme.accent)
@@ -638,7 +655,6 @@ struct StoryPageParts {
                 .opacity(r)
             }
         }
-        .frame(maxHeight: .infinity, alignment: .top)
     }
 
     @ViewBuilder
@@ -655,6 +671,7 @@ struct StoryPageParts {
                     .foregroundStyle(accent.gradient)
                     .cornerRadius(3)
             }
+            .frame(maxHeight: 460 * s)
             .chartYScale(domain: 0...max(1, values.max() ?? 1))
             .chartXScale(domain: -0.6...(Double(values.count) - 0.4))
             .chartXAxis {
@@ -711,7 +728,6 @@ struct StoryPageParts {
                 .opacity(r)
                 .offset(x: (1 - r) * 30)
             }
-            Spacer(minLength: 0)
         }
     }
 
@@ -742,13 +758,13 @@ struct StoryPageParts {
                 .opacity(r)
                 .offset(y: (1 - r) * 24)
             }
-            Spacer(minLength: 0)
         }
     }
 
     static func symbol(for h: Highlight) -> String {
         switch h.kind {
         case .race: "medal.fill"
+        case .personalBest: "stopwatch.fill"
         case .longest: h.sport?.symbol ?? "figure.run"
         case .biggestClimb: "mountain.2.fill"
         case .fastestRun, .fastestRide: "bolt.fill"
@@ -765,9 +781,26 @@ struct StoryPageParts {
 
     @ViewBuilder
     private func crewVisual(_ s: CGFloat) -> some View {
-        if env.showNames, !recap.crew.companions.isEmpty {
-            CrewConstellation(companions: recap.crew.companions, initialsOfYou: recap.athleteFirstName.map { CrewConstellation.initials($0) } ?? "You",
-                              progress: progress, accent: theme.accent)
+        if env.showNames, let top = recap.crew.companions.first {
+            let together = EquivalentFinder.headline(forKm: top.distance / 1000)
+            VStack(spacing: 12 * s) {
+                CrewConstellation(companions: recap.crew.companions, initialsOfYou: recap.athleteFirstName.map { CrewConstellation.initials($0) } ?? "You",
+                                  progress: Easing.segment(progress, 0, 0.6), accent: theme.accent)
+                // The distance you covered together, drawn as a trip of its own.
+                if let together, together.journey.isMappable {
+                    VStack(alignment: .leading, spacing: 4 * s) {
+                        JourneyMap(journey: together.journey, progress: Easing.segment(progress, 0.45, 1), completed: together.multiple,
+                                   accent: theme.accent, showLabels: false)
+                        Text("You & \(top.name): \(n.journeyLine(together))")
+                            .font(.system(size: 13 * s, weight: .bold, design: .rounded))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.7)
+                            .opacity(reveal(0.7, 1))
+                    }
+                    .frame(maxHeight: .infinity)
+                    .layoutPriority(-1)
+                }
+            }
         } else {
             VStack(spacing: 8) {
                 Image(systemName: "person.3.fill")

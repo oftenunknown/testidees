@@ -369,3 +369,115 @@ struct PersonaEmblem: View {
         .accessibilityHidden(true)
     }
 }
+
+/// A wall calendar: one small month per block, laid out to fill whatever
+/// space it gets (3 × 4 in a tall pane, 6 × 2 in a wide one).
+struct MonthGridHeatmap: View {
+    var days: [DayTotal]
+    var range: DayRange
+    var firstWeekday: Int
+    var progress: Double
+    var color: Color = Palette.mint
+    var useTime = false
+    var format = DayFormat()
+
+    var body: some View {
+        let months = Self.months(in: range)
+        let values = days.map { useTime ? $0.movingTime : $0.distance }
+        let cap = max(values.sorted().dropLast(max(0, values.count / 12)).last ?? 1, 1)
+        let lookup = Dictionary(days.map { ($0.day.index, useTime ? $0.movingTime : $0.distance) }, uniquingKeysWith: +)
+        GeometryReader { proxy in
+            let layout = Self.layout(count: months.count, in: proxy.size)
+            let cell = layout.cell
+            VStack(alignment: .leading, spacing: cell) {
+                ForEach(0..<layout.rows, id: \.self) { row in
+                    HStack(alignment: .top, spacing: cell * 1.2) {
+                        ForEach(0..<layout.columns, id: \.self) { column in
+                            let index = row * layout.columns + column
+                            if index < months.count {
+                                let appear = Easing.segment(progress, Double(index) / Double(months.count) * 0.7, Double(index) / Double(months.count) * 0.7 + 0.3)
+                                VStack(alignment: .leading, spacing: cell * 0.4) {
+                                    Text(format.monthShort(months[index]))
+                                        .font(.system(size: max(9, cell * 1.1), weight: .bold, design: .rounded))
+                                        .foregroundStyle(.white.opacity(0.85))
+                                        .frame(height: cell * 1.2)
+                                    MonthCells(month: months[index], range: range, firstWeekday: firstWeekday, lookup: lookup, cap: cap, color: color, cell: cell)
+                                        .frame(width: cell * 7, height: cell * 6)
+                                }
+                                .opacity(appear)
+                                .scaleEffect(0.9 + 0.1 * appear, anchor: .topLeading)
+                            }
+                        }
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+        .accessibilityHidden(true)
+    }
+
+    static func months(in range: DayRange) -> [LocalDay] {
+        guard !range.isEmpty else { return [] }
+        var out: [LocalDay] = []
+        var m = range.start.startOfMonth
+        while m < range.end {
+            out.append(m)
+            m = m.adding(months: 1)
+        }
+        return out
+    }
+
+    /// Columns, rows and cell size that make the months as big as possible.
+    static func layout(count: Int, in size: CGSize) -> (columns: Int, rows: Int, cell: CGFloat) {
+        guard count > 0 else { return (1, 1, 8) }
+        var best = (columns: 1, rows: count, cell: CGFloat(0))
+        for columns in 1...min(6, count) {
+            let rows = Int((Double(count) / Double(columns)).rounded(.up))
+            // A month is 7 cells (+ gaps) wide and a label plus 6 weeks tall.
+            let width = size.width / (CGFloat(columns) * 7 + CGFloat(columns - 1) * 1.2)
+            let height = size.height / (CGFloat(rows) * 8.6 + CGFloat(rows - 1))
+            let cell = min(width, height)
+            if cell > best.cell { best = (columns, rows, cell) }
+        }
+        return (best.columns, best.rows, max(best.cell, 3))
+    }
+}
+
+/// The day squares of one month.
+private struct MonthCells: View {
+    var month: LocalDay
+    var range: DayRange
+    var firstWeekday: Int
+    var lookup: [Int: Double]
+    var cap: Double
+    var color: Color
+    var cell: CGFloat
+
+    var body: some View {
+        let first = month.startOfMonth
+        let next = first.adding(months: 1)
+        let offset = ((first.weekday - firstWeekday) % 7 + 7) % 7
+        let start = range.start.index, end = range.end.index
+        let lookup = lookup, cap = cap, color = color
+        Canvas { context, size in
+            let pitch = size.width / 7
+            let side = pitch * 0.82
+            var day = first
+            while day < next {
+                let i = day.index - first.index + offset
+                let rect = CGRect(x: CGFloat(i % 7) * pitch, y: CGFloat(i / 7) * pitch, width: side, height: side)
+                let path = Path(roundedRect: rect, cornerRadius: side * 0.25)
+                if day.index >= start, day.index < end {
+                    if let v = lookup[day.index] {
+                        context.fill(path, with: .color(color.opacity(0.35 + 0.65 * min(1, v / cap))))
+                    } else {
+                        context.fill(path, with: .color(.white.opacity(0.09)))
+                    }
+                } else {
+                    context.stroke(path, with: .color(.white.opacity(0.06)), lineWidth: 0.5)
+                }
+                day = day.adding(days: 1)
+            }
+        }
+    }
+}

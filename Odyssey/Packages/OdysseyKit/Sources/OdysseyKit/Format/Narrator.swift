@@ -153,6 +153,9 @@ public struct Narrator: Sendable {
             return "Race day: \(units.distance(h.value)) in \(Units.clock(h.secondary ?? 0))"
         case .longestSwim:
             return "On \(date) you swam \(units.swimDistance(h.value))"
+        case .personalBest:
+            let distance = StandardDistance.matching(meters: h.secondary ?? 0)?.title ?? "distance"
+            return "On \(date) you set a \(distance) PB: \(Units.clock(h.value))"
         }
     }
 
@@ -182,6 +185,8 @@ public struct Narrator: Sendable {
             return "with \(name)"
         case .furthestAway:
             return "\(name) on \(date)"
+        case .personalBest:
+            return "Your fastest yet, in \(name)"
         }
     }
 

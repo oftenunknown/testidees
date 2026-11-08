@@ -22,21 +22,15 @@ final class OdysseyUITests: XCTestCase {
 
         // Story: every page, after its entrance animation settles.
         play.tap()
-        sleep(3)
+        sleep(2)
         for index in 0..<15 {
             snapshot(String(format: "10-Story-%02d", index))
             guard index < 14 else { break }
-            // Tap the right-hand side to advance (left side goes back).
-            app.coordinate(withNormalizedOffset: CGVector(dx: 0.85, dy: 0.45)).tap()
-            sleep(3)
+            // Tap right of centre to advance (the left quarter goes back). Not the far
+            // right: on iPhone Duo's outer display that's the system's vertical bar.
+            app.coordinate(withNormalizedOffset: CGVector(dx: 0.6, dy: 0.5)).tap()
+            sleep(1)
         }
-        // Landscape spread on phones.
-        XCUIDevice.shared.orientation = .landscapeLeft
-        sleep(3)
-        snapshot("30-Story-Landscape")
-        XCUIDevice.shared.orientation = .portrait
-        sleep(2)
-
         let close = app.buttons["story-close"].firstMatch
         if close.waitForExistence(timeout: 3) { close.tap() }
         sleep(1)
@@ -78,24 +72,39 @@ final class OdysseyUITests: XCTestCase {
                 _ = app.buttons["export-share"].firstMatch.waitForExistence(timeout: 20)
                 snapshot("08-Share-Card-Ready")
             }
-            let long = app.segmentedControls.buttons.element(boundBy: 1)
+            let long = app.segmentedControls["export-format"].buttons.element(boundBy: 1)
             if long.exists {
                 long.tap()
                 sleep(4)
                 snapshot("09-Share-Long")
             }
+            app.buttons["Close"].firstMatch.tap()
+            sleep(1)
+        }
+
+        // Last, because rotating can unsettle some layouts (the Duo's outer display
+        // doesn't rotate at all): the story as a two-page spread in landscape.
+        if play.waitForExistence(timeout: 3) {
+            play.tap()
+            sleep(2)
+            XCUIDevice.shared.orientation = .landscapeLeft
+            sleep(3)
+            snapshot("30-Story-Landscape")
+            XCUIDevice.shared.orientation = .portrait
         }
     }
 
     @MainActor
     private func tapTab(_ app: XCUIApplication, _ name: String) {
         let tab = app.tabBars.buttons[name].firstMatch
-        if tab.waitForExistence(timeout: 2) {
+        if tab.waitForExistence(timeout: 2), tab.isHittable {
             tab.tap()
-        } else {
-            // Sidebar or vertical bar layouts expose tabs as plain buttons.
-            let button = app.buttons[name].firstMatch
-            if button.waitForExistence(timeout: 2) { button.tap() }
+            return
+        }
+        // Sidebar, top tab bar and the Duo's vertical bar expose tabs as plain buttons.
+        let button = app.buttons[name].firstMatch
+        if button.waitForExistence(timeout: 2), button.isHittable {
+            button.tap()
         }
     }
 

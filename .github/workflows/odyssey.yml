@@ -33,6 +33,7 @@ jobs:
   app:
     name: Build & UI tests (iPhone 18 Pro, Pro Max, Duo, iPad mini)
     runs-on: xcode-27
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
 
@@ -70,6 +71,9 @@ jobs:
               -project Odyssey.xcodeproj -scheme Odyssey \
               -destination "id=$udid" \
               -derivedDataPath build \
+              -test-timeouts-enabled YES \
+              -default-test-execution-time-allowance 480 \
+              -maximum-test-execution-time-allowance 600 \
               -resultBundlePath "results/$slug.xcresult" 2>&1 | xcbeautify --renderer github-actions || echo "::warning::UI tests failed on $device"
             mkdir -p "screenshots/$slug"
             xcrun xcresulttool export attachments --path "results/$slug.xcresult" --output-path "screenshots/$slug" || true

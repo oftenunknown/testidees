@@ -16,10 +16,12 @@ public struct RecapOptions: Sendable {
     public var routeLimit: Int
     /// Trim this much off both ends of each route in route art.
     public var trimRouteEndsMeters: Double
+    /// For the few pre-written sentences (persona evidence).
+    public var units: UnitSystem
 
     public init(today: LocalDay, firstWeekday: Int = 0, weightKg: Double? = nil, crewTags: [Int64: [String]] = [:],
                 hiddenCompanions: Set<String> = [], athlete: Athlete? = nil, previousAvailable: Bool = true,
-                routeLimit: Int = 60, trimRouteEndsMeters: Double = 250) {
+                routeLimit: Int = 60, trimRouteEndsMeters: Double = 250, units: UnitSystem = .metric) {
         self.today = today
         self.firstWeekday = firstWeekday
         self.weightKg = weightKg
@@ -29,6 +31,7 @@ public struct RecapOptions: Sendable {
         self.previousAvailable = previousAvailable
         self.routeLimit = routeLimit
         self.trimRouteEndsMeters = trimRouteEndsMeters
+        self.units = units
     }
 }
 
@@ -59,6 +62,7 @@ public enum RecapBuilder {
 
         var highlights = Self.highlights(acts, calendar: calendar, rhythm: rhythm, places: places, days: days)
         if let biggest = crew.biggestGroup { highlights.append(biggest) }
+        if let pb = Self.personalBestHighlight(bests) { highlights.append(pb) }
 
         let weeks = calendar.weeks.filter { $0.length == 7 }
         let weekDistances = weeks.map { $0.distance }
@@ -81,7 +85,8 @@ public enum RecapBuilder {
             groupShare: crew.share,
             startAreas: places.startAreas,
             familyShares: Dictionary(uniqueKeysWithValues: sports.map { ($0.family, $0.share) }),
-            paceImprovement: progression.runPace.map { -$0.relativeChange }
+            paceImprovement: progression.runPace.map { -$0.relativeChange },
+            units: options.units
         ))
 
         return Recap(
@@ -474,6 +479,18 @@ public enum RecapBuilder {
         )
     }
 
+    /// "On Sat, Sep 5 you set a 5K PB": the headline distance you improved most
+    /// (or the longest PR when nothing improved).
+    static func personalBestHighlight(_ bests: PersonalBests) -> Highlight? {
+        let candidates = bests.items.filter { $0.distance.isHeadline && !$0.prs.isEmpty }
+        let improved = candidates.filter { $0.improvement > 0 }
+        let star = improved.max { $0.improvement / $0.first.time < $1.improvement / $1.first.time }
+            ?? candidates.max { $0.distance < $1.distance }
+        guard let star, let pr = star.prs.last else { return nil }
+        return Highlight(kind: .personalBest, day: pr.day, activityID: pr.activityID, name: pr.activityName, sport: .run,
+                         value: pr.time, secondary: star.distance.meters)
+    }
+
     // MARK: - Places
 
     static func places(_ list: [Activity], library: [Activity]) -> Places {
@@ -509,8 +526,21 @@ public enum RecapBuilder {
     // MARK: - Route art
 
     static func routes(_ list: [Activity], limit: Int, trim: Double) -> [RouteSketch] {
-        let withRoutes = list.filter { $0.hasRoute && $0.distance >= 1000 && !$0.isTrainer }
-            .sorted { $0.distance > $1.distance }
+        // Longest first within each sport, then dealt out round-robin so the
+        // wall isn't all bike loops.
+        var bySport: [SportFamily: [Activity]] = [:]
+        for a in list where a.hasRoute && a.distance >= 1000 && !a.isTrainer {
+            bySport[a.sport.family, default: []].append(a)
+        }
+        let queues = bySport
+            .map { ($0.key, $0.value.sorted { $0.distance > $1.distance }) }
+            .sorted { $0.1.count > $1.1.count }
+        var withRoutes: [Activity] = []
+        var round = 0
+        while withRoutes.count < limit * 2, queues.contains(where: { $0.1.count > round }) {
+            for (_, queue) in queues where queue.count > round { withRoutes.append(queue[round]) }
+            round += 1
+        }
         var out: [RouteSketch] = []
         for a in withRoutes {
             guard out.count < limit, let encoded = a.polyline else { break }

@@ -96,6 +96,12 @@ struct RecapTests {
         #expect((far?.value ?? 0) > 700)
         #expect(r.places.home == Coordinate(51.5, -0.1))
         #expect(StoryScript.moments(for: r).first?.kind == .race)
+        // The half was both the race and a PR; the 5K PR on Feb 2 is the same activity,
+        // so the PB moment is skipped as a repeat, but the highlight itself exists.
+        let pb = r.highlight(.personalBest)
+        #expect(pb?.activityID == 6)
+        #expect(pb?.secondary == StandardDistance.k5.meters)
+        #expect(Narrator(units: Units(.metric, locale: enUS)).headline(pb!) == "On Mon, Feb 2 you set a 5K PB: 24:40")
     }
 
     @Test func personalBests() {
@@ -186,5 +192,21 @@ struct CrewDetectorTests {
     ])
     func detects(_ text: String, _ expected: [String]) {
         #expect(CrewDetector.names(in: text) == expected)
+    }
+}
+
+@Suite("Persona")
+struct PersonaTests {
+    @Test func evidenceUsesTheAthletesUnits() {
+        let runs = (0..<10).map { i in
+            makeActivity(id: Int64(500 + i), day: LocalDay(year: 2026, month: 2, day: 1).adding(days: i * 3), hour: 6, km: 16.0934, minutes: 90)
+        }
+        let range = RecapRange(.quarter(year: 2026, quarter: 1))
+        let today = LocalDay(year: 2026, month: 3, day: 31)
+        let metric = RecapBuilder.build(from: runs, range: range, options: RecapOptions(today: today))
+        let imperial = RecapBuilder.build(from: runs, range: range, options: RecapOptions(today: today, units: .imperial))
+        #expect(metric.persona.reason(for: .longHauler) == "Average run 16.1 km")
+        #expect(imperial.persona.reason(for: .longHauler) == "Average run 10.0 mi")
+        #expect(metric.persona.primary == .longHauler || metric.persona.primary == .dawnPatrol)
     }
 }

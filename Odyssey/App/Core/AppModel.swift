@@ -167,7 +167,8 @@ final class AppModel {
             hiddenCompanions: hiddenCompanions,
             athlete: athlete,
             previousAvailable: previousPeriodAvailable,
-            trimRouteEndsMeters: settings.trimRouteEnds ? 300 : 0
+            trimRouteEndsMeters: settings.trimRouteEnds ? 300 : 0,
+            units: units.system
         )
     }
 

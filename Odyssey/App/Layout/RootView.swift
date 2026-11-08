@@ -26,7 +26,8 @@ struct RootView: View {
             .badge(model.recap?.crew.untaggedGroupIDs.isEmpty == false ? Text("•") : nil)
         }
         .tabViewStyle(.sidebarAdaptable)
-        .tabBarMinimizeBehavior(.onScrollDown)
+        // UI tests need the tabs reachable after scrolling.
+        .tabBarMinimizeBehavior(model.launch.isUITesting ? .never : .onScrollDown)
         .modifier(DeviceContextReader())
         .overlay(alignment: .top) {
             if let toast = model.toast {

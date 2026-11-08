@@ -219,7 +219,7 @@ public struct Highlight: Hashable, Codable, Sendable, Identifiable {
     public enum Kind: String, Codable, Sendable, CaseIterable {
         case longest, longestDuration, biggestClimb, fastestRun, fastestRide, mostKudos
         case earliestStart, latestStart, biggestWeek, busiestMonth, firstActivity
-        case furthestAway, biggestGroup, race, longestSwim
+        case furthestAway, biggestGroup, race, longestSwim, personalBest
     }
 
     public var kind: Kind

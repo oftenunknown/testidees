@@ -102,23 +102,37 @@ struct InsightsView: View {
                 }
                 .frame(height: 170)
                 if let pace = r.progression.runPace {
+                    let perUnit = (units.isMetric ? 1000 : Units.metersPerMile) / 60
+                    let xs = pace.points.map { Double($0.day.index) }
+                    let ys = pace.points.map { $0.value * perUnit }
+                    let x0 = xs.min() ?? 0, x1 = max(xs.max() ?? 1, x0 + 1)
+                    let y0 = (ys.min() ?? 4) - 0.15, y1 = (ys.max() ?? 7) + 0.15
                     Divider()
-                    Text("Run pace").font(.subheadline.weight(.semibold))
-                    Chart(Array(pace.points.enumerated()), id: \.offset) { _, p in
-                        PointMark(x: .value("Day", p.day.index), y: .value("Pace", p.value * (units.isMetric ? 1000 : Units.metersPerMile) / 60))
-                            .foregroundStyle(Palette.sky.opacity(0.35))
-                            .symbolSize(18)
+                    Text("Run pace (min\(units.paceUnit), lower is faster)").font(.subheadline.weight(.semibold))
+                    Chart {
+                        ForEach(Array(pace.points.enumerated()), id: \.offset) { _, p in
+                            PointMark(x: .value("Day", Double(p.day.index)), y: .value("Pace", p.value * perUnit))
+                                .foregroundStyle(Palette.sky.opacity(0.4))
+                                .symbolSize(16)
+                        }
+                        LineMark(x: .value("Day", x0), y: .value("Pace", pace.start * perUnit), series: .value("Trend", "trend"))
+                            .foregroundStyle(Palette.ember)
+                            .lineStyle(StrokeStyle(lineWidth: 3, lineCap: .round))
+                        LineMark(x: .value("Day", x1), y: .value("Pace", pace.end * perUnit), series: .value("Trend", "trend"))
+                            .foregroundStyle(Palette.ember)
+                            .lineStyle(StrokeStyle(lineWidth: 3, lineCap: .round))
                     }
+                    .chartXScale(domain: x0...x1)
+                    .chartYScale(domain: y0...y1)
                     .chartXAxis(.hidden)
-                    .chartYScale(domain: .automatic(includesZero: false, reversed: true))
                     .chartYAxis {
                         AxisMarks(values: .automatic(desiredCount: 3)) { value in
                             AxisGridLine()
                             AxisValueLabel { Text(Units.clock((value.as(Double.self) ?? 0) * 60)) }
                         }
                     }
-                    .frame(height: 120)
-                    Text("\(units.paceNumber(secondsPerMeter: pace.start)) → \(units.pace(secondsPerMeter: pace.end)) (trend)")
+                    .frame(height: 130)
+                    Text("Trend \(units.paceNumber(secondsPerMeter: pace.start)) → \(units.pace(secondsPerMeter: pace.end)) across \(pace.samples) runs")
                         .font(.footnote).foregroundStyle(.secondary)
                 }
                 if let eff = r.progression.runEfficiency {

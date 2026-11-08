@@ -105,6 +105,7 @@ enum PersonaScorer {
         var startAreas: Int
         var familyShares: [SportFamily: Double]
         var paceImprovement: Double?
+        var units: UnitSystem = .metric
     }
 
     static func persona(_ i: Inputs) -> Persona {
@@ -130,12 +131,17 @@ enum PersonaScorer {
             evidence[Archetype.metronome.rawValue] = "Active in \(i.activeWeeks) of \(i.weeksInRange) weeks"
         }
         scores[.mountainGoat] = i.elevationPerKm / 18
-        evidence[Archetype.mountainGoat.rawValue] = "\(Int(i.elevationPerKm.rounded())) m of climbing per km"
+        evidence[Archetype.mountainGoat.rawValue] = i.units == .metric
+            ? "\(Int(i.elevationPerKm.rounded())) m of climbing per km"
+            : "\(Int((i.elevationPerKm * Units.feetPerMeter * Units.metersPerMile / 1000).rounded())) ft of climbing per mile"
         var haul = 0.0
         if let run = i.averageRunKm { haul = max(haul, run / 13) }
         if let ride = i.averageRideKm { haul = max(haul, ride / 65) }
         scores[.longHauler] = haul
-        if let run = i.averageRunKm { evidence[Archetype.longHauler.rawValue] = "Average run \(String(format: "%.1f", run)) km" }
+        if let run = i.averageRunKm {
+            let value = i.units == .metric ? run : run * 1000 / Units.metersPerMile
+            evidence[Archetype.longHauler.rawValue] = "Average run \(String(format: "%.1f", value)) \(i.units == .metric ? "km" : "mi")"
+        }
         scores[.socialButterfly] = i.groupShare / 0.35
         evidence[Archetype.socialButterfly.rawValue] = "\(pct(i.groupShare)) of activities with others"
         scores[.explorer] = Double(i.startAreas) / max(Double(i.count) * 0.5, 12)
