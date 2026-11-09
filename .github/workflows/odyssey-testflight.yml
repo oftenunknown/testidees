@@ -6,10 +6,17 @@ name: Odyssey TestFlight
 #
 # Uses the same repository secrets as the Snag TestFlight workflow
 # (ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_P8, APPLE_TEAM_ID — see docs/TESTFLIGHT.md).
+#
+# One-tap "Connect with Strava" for testers (see Odyssey/README.md → Share with friends):
+#   secrets   CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID, STRAVA_CLIENT_SECRET
+#   variable  STRAVA_CLIENT_ID
+# With those set, every run first deploys Odyssey/backend (the token server that holds
+# the Strava secret) to Cloudflare Workers and bakes its URL and the Client ID into the build.
+#
 # Optional repository variables:
-#   ODYSSEY_BUNDLE_ID      Defaults to com.oftenunknown.odyssey
-#   STRAVA_CLIENT_ID       Your Strava API app's Client ID, baked into the build
-#   ODYSSEY_TOKEN_SERVER   https URL of Odyssey/backend, so testers don't need your client secret
+#   ODYSSEY_BUNDLE_ID          Defaults to com.oftenunknown.odyssey
+#   ODYSSEY_ALLOWED_ATHLETES   Comma-separated Strava athlete IDs the token server accepts
+#   ODYSSEY_TOKEN_SERVER       URL of a token server you deployed yourself (used without Cloudflare secrets)
 
 on:
   workflow_dispatch:
@@ -21,7 +28,91 @@ defaults:
     working-directory: Odyssey
 
 jobs:
+  token-server:
+    name: Token server
+    runs-on: ubuntu-latest
+    outputs:
+      url: ${{ steps.deploy.outputs.url }}
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      STRAVA_CLIENT_ID: ${{ vars.STRAVA_CLIENT_ID }}
+      STRAVA_CLIENT_SECRET: ${{ secrets.STRAVA_CLIENT_SECRET }}
+      ALLOWED_ATHLETE_IDS: ${{ vars.ODYSSEY_ALLOWED_ATHLETES }}
+      WRANGLER_SEND_METRICS: "false"
+    defaults:
+      run:
+        working-directory: Odyssey/backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check configuration
+        id: check
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "No \`CLOUDFLARE_API_TOKEN\` secret, so no token server was deployed." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          missing=""
+          for v in CLOUDFLARE_ACCOUNT_ID STRAVA_CLIENT_ID STRAVA_CLIENT_SECRET; do
+            [ -z "${!v}" ] && missing="$missing $v"
+          done
+          if [ -n "$missing" ]; then
+            echo "::error::The token server also needs:$missing (STRAVA_CLIENT_ID is a variable, the rest are secrets). See Odyssey/README.md."
+            exit 1
+          fi
+          if ! printf '%s' "$STRAVA_CLIENT_ID" | grep -Eq '^[0-9]+$'; then
+            echo "::error::STRAVA_CLIENT_ID should be the number shown as Client ID at strava.com/settings/api."
+            exit 1
+          fi
+          echo "enabled=true" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-node@v4
+        if: steps.check.outputs.enabled == 'true'
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: Odyssey/backend/package-lock.json
+
+      - name: Test
+        if: steps.check.outputs.enabled == 'true'
+        run: |
+          npm ci
+          npm test
+          npm run typecheck
+
+      - name: Deploy to Cloudflare Workers
+        id: deploy
+        if: steps.check.outputs.enabled == 'true'
+        run: |
+          set -o pipefail
+          secrets="$RUNNER_TEMP/worker-secrets.json"
+          trap 'rm -f "$secrets"' EXIT
+          jq -n '{STRAVA_CLIENT_ID: env.STRAVA_CLIENT_ID, STRAVA_CLIENT_SECRET: env.STRAVA_CLIENT_SECRET}' > "$secrets"
+          args=(--secrets-file "$secrets")
+          if [ -n "$ALLOWED_ATHLETE_IDS" ]; then args+=(--var "ALLOWED_ATHLETE_IDS:$ALLOWED_ATHLETE_IDS"); fi
+          npx wrangler deploy "${args[@]}" 2>&1 | tee "$RUNNER_TEMP/deploy.log"
+          url=$(grep -Eo 'https://[A-Za-z0-9.-]+\.workers\.dev' "$RUNNER_TEMP/deploy.log" | head -1 || true)
+          if [ -z "$url" ]; then
+            echo "::error::Deployed, but found no workers.dev URL. Open Workers & Pages in the Cloudflare dashboard once to create your workers.dev subdomain, then re-run."
+            exit 1
+          fi
+          for attempt in 1 2 3 4 5 6; do
+            health=$(curl -fsS "$url/v1/health" || true)
+            case "$health" in
+              *'"configured":true'*)
+                echo "url=$url" >> "$GITHUB_OUTPUT"
+                echo "### Token server: $url" >> "$GITHUB_STEP_SUMMARY"
+                exit 0 ;;
+            esac
+            sleep 5
+          done
+          echo "::error::$url/v1/health didn't report a configured server."
+          exit 1
+
   upload:
+    needs: token-server
     runs-on: xcode-27
     env:
       ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
@@ -30,7 +121,7 @@ jobs:
       APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
       BUNDLE_ID: ${{ vars.ODYSSEY_BUNDLE_ID || 'com.oftenunknown.odyssey' }}
       STRAVA_CLIENT_ID: ${{ vars.STRAVA_CLIENT_ID }}
-      ODYSSEY_TOKEN_SERVER: ${{ vars.ODYSSEY_TOKEN_SERVER }}
+      ODYSSEY_TOKEN_SERVER: ${{ needs.token-server.outputs.url || vars.ODYSSEY_TOKEN_SERVER }}
       BUILD_NUMBER: ${{ github.run_number }}
     steps:
       - uses: actions/checkout@v4
@@ -84,6 +175,11 @@ jobs:
             -authenticationKeyIssuerID "$ASC_ISSUER_ID" 2>&1 | xcbeautify --renderer github-actions
           echo "### Uploaded Odyssey build $BUILD_NUMBER to App Store Connect" >> "$GITHUB_STEP_SUMMARY"
           echo "It appears in TestFlight after Apple finishes processing (usually 5–20 minutes)." >> "$GITHUB_STEP_SUMMARY"
+          if [ -n "$STRAVA_CLIENT_ID" ] && [ -n "$ODYSSEY_TOKEN_SERVER" ]; then
+            echo "Testers connect Strava with one tap (token server $ODYSSEY_TOKEN_SERVER)." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "No Strava API app is built in, so testers enter their own under Settings → Strava API app." >> "$GITHUB_STEP_SUMMARY"
+          fi
 
       - name: Clean up key
         if: always()

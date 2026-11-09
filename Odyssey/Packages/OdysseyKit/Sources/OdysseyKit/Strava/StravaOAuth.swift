@@ -123,6 +123,14 @@ extension TokenExchanger {
             throw message?.localizedCaseInsensitiveContains("invalid") == true || response.statusCode == 401
                 ? StravaError.unauthorized
                 : StravaError.server(status: response.statusCode, message: message)
+        case 403:
+            let fault = try? JSONDecoder().decode(FaultDTO.self, from: data)
+            if fault?.code == "athlete_not_allowed" { throw StravaError.athleteNotAllowed }
+            // Strava: {"message":"Forbidden","errors":[{"code":"limit of connected athletes exceeded",…}]}
+            if String(decoding: data.prefix(4000), as: UTF8.self).localizedCaseInsensitiveContains("connected athletes") {
+                throw StravaError.athleteLimitReached
+            }
+            throw StravaError.server(status: 403, message: fault?.message)
         case 429: throw StravaError.rateLimited(nil)
         default: throw StravaError.server(status: response.statusCode, message: String(data: data.prefix(200), encoding: .utf8))
         }

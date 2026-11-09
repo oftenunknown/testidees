@@ -24,8 +24,8 @@ function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
 }
 
-function error(message: string, status: number): Response {
-  return json({ message }, status);
+function error(message: string, status: number, code?: string): Response {
+  return json(code ? { message, code } : { message }, status);
 }
 
 function stringField(body: unknown, name: string): string | null {
@@ -81,7 +81,7 @@ async function exchange(params: Record<string, string>, env: Env, fetcher: Fetch
     if (!athleteID || !allowed.has(athleteID)) {
       // Don't leave a working grant behind for someone who isn't on the list.
       if (refresh) await revokeUpstream(refresh, env, fetcher).catch(() => undefined);
-      return error("This Odyssey server isn't open to your Strava account.", 403);
+      return error("This Odyssey server isn't open to your Strava account.", 403, "athlete_not_allowed");
     }
   }
   return new Response(text, { status: 200, headers: { "content-type": "application/json" } });

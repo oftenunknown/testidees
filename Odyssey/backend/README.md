@@ -20,6 +20,13 @@ straight from Strava to the phone and never passes through it.
 
 ## Deploy
 
+The easy way: add the Cloudflare and Strava secrets described in
+[Share it with friends](../README.md#share-it-with-friends), and the
+`Odyssey TestFlight` workflow tests and deploys this Worker on every run, then
+bakes its URL into the build.
+
+By hand:
+
 ```bash
 cd Odyssey/backend
 npm install

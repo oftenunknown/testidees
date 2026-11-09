@@ -69,6 +69,7 @@ describe("token server", () => {
     expect(ok.status).toBe(200);
     const denied = await handle(post("/v1/strava/token", { code: "abcdef123456" }), { ...env, ALLOWED_ATHLETE_IDS: "1,2" }, fetcher);
     expect(denied.status).toBe(403);
+    expect(((await denied.json()) as { code?: string }).code).toBe("athlete_not_allowed");
     const revoke = calls.find((c) => c.url === STRAVA_REVOKE_URL);
     expect(revoke).toBeDefined();
     expect(revoke?.headers.authorization).toBe(`Basic ${btoa("12345:s3cret")}`);

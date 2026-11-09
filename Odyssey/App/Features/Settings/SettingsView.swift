@@ -106,9 +106,36 @@ struct SettingsView: View {
         }
     }
 
+    @ViewBuilder
     private func stravaAppSection(settings: AppSettings) -> some View {
+        if settings.hasBuiltInStrava {
+            Section {
+                DisclosureGroup("Use your own Strava API app") {
+                    stravaAppFields(settings: settings)
+                }
+            } footer: {
+                Text("This copy of Odyssey comes with its own Strava connection, so there's nothing to set up.")
+            }
+        } else {
+            Section {
+                stravaAppFields(settings: settings)
+            } header: {
+                Text("Strava API app")
+            } footer: {
+                Text("""
+                1. Create an app at strava.com/settings/api (any name and website).
+                2. Set "Authorization Callback Domain" to \(settings.callbackDomain.isEmpty ? "localhost" : settings.callbackDomain).
+                3. Paste the Client ID and Client Secret here, then tap Connect.
+                The secret stays in this iPhone's Keychain. To share Odyssey with friends without handing out the secret, build it with the token server (see Odyssey/README.md).
+                """)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func stravaAppFields(settings: AppSettings) -> some View {
         @Bindable var settings = settings
-        return Section {
+        Group {
             TextField("Client ID", text: $settings.clientID)
                 .keyboardType(.numberPad)
                 .accessibilityIdentifier("client-id")
@@ -125,15 +152,6 @@ struct SettingsView: View {
             Link(destination: URL(string: "https://www.strava.com/settings/api")!) {
                 Label("Open strava.com/settings/api", systemImage: "safari")
             }
-        } header: {
-            Text("Strava API app")
-        } footer: {
-            Text("""
-            1. Create an app at strava.com/settings/api (any name and website).
-            2. Set "Authorization Callback Domain" to \(settings.callbackDomain.isEmpty ? "localhost" : settings.callbackDomain).
-            3. Paste the Client ID and Client Secret here, then tap Connect.
-            The secret stays in this iPhone's Keychain. To share Odyssey with friends without handing out the secret, deploy the token server in Odyssey/backend and enter its URL instead.
-            """)
         }
     }
 }

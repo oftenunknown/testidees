@@ -77,9 +77,40 @@ toggles hide companion names and route art.
    **Client Secret**, then tap **Connect with Strava**. If the Strava app is
    installed you can approve there instead.
 
-The secret is stored in the Keychain on your phone. To give Odyssey to others
-without sharing the secret, deploy the [token server](backend/README.md) and
-enter its URL instead.
+The secret is stored in the Keychain on your phone. To give Odyssey to other
+people without making them do any of this, see the next section.
+
+## Share it with friends
+
+Friends shouldn't need a Client ID or secret. In a TestFlight build made this
+way they open the app and tap **Connect with Strava**. Your Strava secret stays
+on a tiny [token server](backend/README.md) (a free Cloudflare Worker) that only
+swaps sign-in codes for tokens. Their activities go straight from Strava to
+their phone.
+
+1. **Strava:** at [strava.com/settings/api](https://www.strava.com/settings/api),
+   upgrade your app out of single-player mode so it can connect up to 10
+   athletes. Beyond 10, Strava reviews the app first.
+2. **Cloudflare** (free account): create an API token with the **Edit
+   Cloudflare Workers** template (My Profile → API Tokens) and note your
+   Account ID (it's in the dashboard URL). Open **Workers & Pages** once; if it
+   asks you to choose a `workers.dev` subdomain, choose one.
+3. **GitHub** → Settings → Secrets and variables → Actions:
+   - secrets `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `STRAVA_CLIENT_SECRET`
+   - variable `STRAVA_CLIENT_ID`
+4. **Build:** push a tag like `odyssey-testflight-2`. The workflow tests and
+   deploys the token server, then bakes its URL and your Client ID into the
+   build. The run summary says "Testers connect Strava with one tap".
+5. **Invite:** App Store Connect → your app → TestFlight → **External Testing
+   +**. Add the build, fill in Test Information, and submit it for Beta App
+   Review (usually under a day, first build only). Mention that reviewers can
+   tap **Explore with demo data** without a Strava account. Then turn on the
+   **public link** and send it to your friends.
+
+Optional: set the variable `ODYSSEY_ALLOWED_ATHLETES` to a comma-separated list
+of Strava athlete IDs, and the token server turns everyone else away. If your
+Strava app is full, people see "This Strava API app can't connect any more
+athletes yet" instead of a raw error.
 
 Good to know:
 

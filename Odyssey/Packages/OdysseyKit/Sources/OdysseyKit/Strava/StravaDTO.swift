@@ -326,4 +326,6 @@ struct TokenResponseDTO: Decodable {
 
 struct FaultDTO: Decodable {
     var message: String?
+    /// Set by Odyssey's token server on its own refusals.
+    var code: String?
 }

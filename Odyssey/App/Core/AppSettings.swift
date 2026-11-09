@@ -54,16 +54,30 @@ final class AppSettings {
     /// Client ID typed in Settings, else the one baked in at build time.
     var effectiveClientID: String {
         let typed = clientID.trimmingCharacters(in: .whitespacesAndNewlines)
-        if !typed.isEmpty { return typed }
-        return (Bundle.main.object(forInfoDictionaryKey: "OdysseyStravaClientID") as? String ?? "")
-            .trimmingCharacters(in: .whitespacesAndNewlines)
+        return typed.isEmpty ? Self.builtInClientID : typed
     }
 
     /// Token server typed in Settings, else the build-time one. HTTPS only.
     var tokenServerURL: URL? {
         let typed = tokenServer.trimmingCharacters(in: .whitespacesAndNewlines)
-        let raw = typed.isEmpty ? (Bundle.main.object(forInfoDictionaryKey: "OdysseyTokenServer") as? String ?? "") : typed
-        guard let url = URL(string: raw.trimmingCharacters(in: .whitespacesAndNewlines)), url.scheme == "https", url.host() != nil else { return nil }
+        if !typed.isEmpty { return Self.httpsURL(typed) }
+        // The built-in server only holds the secret for the built-in Client ID.
+        return effectiveClientID == Self.builtInClientID ? Self.builtInTokenServer : nil
+    }
+
+    /// The build ships with a Strava API app and token server (TestFlight
+    /// builds made with the Cloudflare secrets): people just tap Connect.
+    var hasBuiltInStrava: Bool { !Self.builtInClientID.isEmpty && Self.builtInTokenServer != nil }
+
+    private static let builtInClientID = infoString("OdysseyStravaClientID")
+    private static let builtInTokenServer = httpsURL(infoString("OdysseyTokenServer"))
+
+    private static func infoString(_ key: String) -> String {
+        (Bundle.main.object(forInfoDictionaryKey: key) as? String ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private static func httpsURL(_ raw: String) -> URL? {
+        guard let url = URL(string: raw), url.scheme == "https", url.host() != nil else { return nil }
         return url
     }
 

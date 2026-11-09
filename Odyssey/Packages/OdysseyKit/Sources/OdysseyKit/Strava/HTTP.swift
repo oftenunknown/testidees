@@ -30,6 +30,10 @@ public enum StravaError: Error, Equatable, Sendable {
     case stateMismatch
     case unauthorized
     case forbidden
+    /// Strava's "limit of connected athletes exceeded": the API app is full.
+    case athleteLimitReached
+    /// The token server only accepts the athletes on its allowlist.
+    case athleteNotAllowed
     case notFound
     case rateLimited(RateLimitStatus?)
     case server(status: Int, message: String?)
@@ -56,6 +60,10 @@ extension StravaError: LocalizedError {
             "Your Strava session expired. Please connect again."
         case .forbidden:
             "Strava refused that request. Check the permissions you granted."
+        case .athleteLimitReached:
+            "This Strava API app can't connect any more athletes yet. Whoever set it up can raise the limit at strava.com/settings/api."
+        case .athleteNotAllowed:
+            "This copy of Odyssey isn't open to your Strava account. Ask whoever shared it with you to add you."
         case .notFound:
             "Strava couldn't find that."
         case .rateLimited(let status):
@@ -65,7 +73,7 @@ extension StravaError: LocalizedError {
                 "Strava's request limit is reached. Syncing resumes automatically."
             }
         case .server(let status, let message):
-            "Strava error \(status)\(message.map { ": \($0)" } ?? "")."
+            "Strava error \(status)\(message.map { ": \($0.trimmingCharacters(in: CharacterSet(charactersIn: ". ")))" } ?? "")."
         case .badResponse:
             "Strava sent something unexpected."
         case .decoding(let what):

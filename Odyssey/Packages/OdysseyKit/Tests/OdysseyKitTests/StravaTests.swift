@@ -212,6 +212,31 @@ struct StravaTests {
         #expect(tokens.refreshToken == "r1")
     }
 
+    @Test func explainsRefusedSignIns() async {
+        let full = MockHTTP { _ in
+            (403, [:], Data(#"{"message":"Forbidden","errors":[{"resource":"Athlete","field":"","code":"limit of connected athletes exceeded"}]}"#.utf8))
+        }
+        await #expect(throws: StravaError.athleteLimitReached) {
+            try await DirectTokenExchanger(clientID: "1", clientSecret: "s", http: full).exchange(code: "abc", scopes: [])
+        }
+        // The token server passes Strava's answer through unchanged.
+        let server = URL(string: "https://odyssey.example.workers.dev")!
+        await #expect(throws: StravaError.athleteLimitReached) {
+            try await ServerTokenExchanger(baseURL: server, http: full).exchange(code: "abc", scopes: [])
+        }
+        let notListed = MockHTTP { _ in
+            (403, [:], Data(#"{"message":"This Odyssey server isn't open to your Strava account.","code":"athlete_not_allowed"}"#.utf8))
+        }
+        await #expect(throws: StravaError.athleteNotAllowed) {
+            try await ServerTokenExchanger(baseURL: server, http: notListed).exchange(code: "abc", scopes: [])
+        }
+        let other = MockHTTP { _ in (403, [:], Data(#"{"message":"Forbidden."}"#.utf8)) }
+        await #expect(throws: StravaError.server(status: 403, message: "Forbidden.")) {
+            try await ServerTokenExchanger(baseURL: server, http: other).exchange(code: "abc", scopes: [])
+        }
+        #expect(StravaError.server(status: 403, message: "Forbidden.").localizedDescription == "Strava error 403: Forbidden.")
+    }
+
     @Test func parsesAthlete() async throws {
         let http = MockHTTP { _ in (200, [:], Data("""
         {"id": 99, "firstname": "Alex", "lastname": "Rivera", "measurement_preference": "feet", "weight": 68.5,
