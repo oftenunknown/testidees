@@ -23,6 +23,16 @@ final class AppSettings {
     /// Detail requests per sync (each costs one of Strava's 100 reads per 15 minutes).
     var detailBudget: Int { didSet { defaults.set(detailBudget, forKey: Keys.detailBudget) } }
     var shareTheme: ShareTheme { didSet { defaults.set(shareTheme.rawValue, forKey: Keys.shareTheme) } }
+    /// Whether the Keychain holds a Strava client secret. Mirrored here because
+    /// Keychain reads aren't observable: "Connect" must appear as soon as one is pasted.
+    private(set) var hasClientSecret = Vault.clientSecret != nil
+
+    func saveClientSecret(_ secret: String) {
+        let trimmed = secret.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed != (Vault.clientSecret ?? "") else { return }
+        Vault.saveClientSecret(trimmed)
+        hasClientSecret = Vault.clientSecret != nil
+    }
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults

@@ -122,11 +122,14 @@ in for the Duo's unfolded inner display, which CI can't unfold.
 
 `.github/workflows/odyssey-testflight.yml` signs and uploads a build using the
 same secrets as Snag (see [docs/TESTFLIGHT.md](../docs/TESTFLIGHT.md)); register
-the bundle ID `com.oftenunknown.odyssey` (or set `ODYSSEY_BUNDLE_ID`) and create
-its App Store Connect record first. Optional repository variables
-`STRAVA_CLIENT_ID` and `ODYSSEY_TOKEN_SERVER` are baked into the build so
-testers can connect without typing anything. Run it from the Actions tab or
-push a tag like `odyssey-testflight-1`.
+the bundle ID `com.oftenunknown.odyssey` (or set `ODYSSEY_BUNDLE_ID`; no
+capabilities needed) and create its App Store Connect record first. The team
+also needs at least one registered iPhone: Xcode signs the archive for
+development before re-signing it for the App Store. Optional repository
+variables `STRAVA_CLIENT_ID` and `ODYSSEY_TOKEN_SERVER` are baked into the
+build; with both set, testers can connect without typing anything. Push a tag
+like `odyssey-testflight-1` to run it (the Actions tab only offers **Run
+workflow** once this file is on the default branch).
 
 ## Layout
 

@@ -114,7 +114,7 @@ struct SettingsView: View {
                 .accessibilityIdentifier("client-id")
             SecureField("Client secret", text: $secret)
                 .textContentType(.password)
-                .onChange(of: secret) { _, value in Vault.saveClientSecret(value) }
+                .onChange(of: secret) { _, value in settings.saveClientSecret(value) }
             TextField("Callback domain", text: $settings.callbackDomain)
                 .textInputAutocapitalization(.never)
                 .autocorrectionDisabled()

@@ -226,7 +226,11 @@ final class AppModel {
         return DirectTokenExchanger(clientID: id, clientSecret: secret)
     }
 
-    var isStravaConfigured: Bool { settings.stravaConfig.isValid && makeExchanger() != nil }
+    /// Same conditions as `makeExchanger()`, but read from observable settings so
+    /// views update the moment a Client ID, secret or token server is entered.
+    var isStravaConfigured: Bool {
+        settings.stravaConfig.isValid && (settings.tokenServerURL != nil || settings.hasClientSecret)
+    }
 
     private func makeSession(_ tokens: StravaTokens) {
         guard let exchanger = makeExchanger() else { return }

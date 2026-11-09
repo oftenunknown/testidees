@@ -1,7 +1,8 @@
 name: Odyssey TestFlight
 
 # Builds a signed Odyssey release and uploads it to App Store Connect / TestFlight.
-# Run it from the Actions tab ("Run workflow") or push a tag like odyssey-testflight-1.
+# Push a tag like odyssey-testflight-1 to run it; the Actions tab offers "Run workflow"
+# once this file is on the default branch.
 #
 # Uses the same repository secrets as the Snag TestFlight workflow
 # (ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_P8, APPLE_TEAM_ID — see docs/TESTFLIGHT.md).

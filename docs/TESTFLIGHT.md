@@ -98,6 +98,7 @@ app. The toggle only appears in TestFlight and Xcode builds.
 
 - **"Missing repository secrets"**: one of the four secrets in step 5 is missing or misspelled.
 - **"No profiles for 'com.oftenunknown.snag' were found"** or **"not authorized"**: the API key needs the Admin role, and the bundle ID must be registered (step 3).
+- **"Your team has no devices from which to generate a provisioning profile"**: Xcode signs the archive for development before re-signing it for the App Store, and that needs at least one iPhone registered to your team. Add one under [Certificates, Identifiers & Profiles → Devices → +](https://developer.apple.com/account/resources/devices/add) with its UDID, then re-run. To find the UDID, connect the phone to a Mac, select it in Finder and click the line under its name until the UDID shows (right-click to copy); on Windows, iTunes does the same when you click the serial number. Running any app on the phone from Xcode registers it automatically.
 - **"Cannot determine the Apple ID from Bundle ID"** on upload: create the app record (step 4) with the same bundle ID the workflow uses.
 - **Errors mentioning an agreement**: sign in at [developer.apple.com/account](https://developer.apple.com/account) and accept any pending agreement shown in the banner.
 - **"The bundle version must be higher than the previously uploaded version"**: re-run the workflow; build numbers come from the run number.
