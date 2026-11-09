@@ -103,7 +103,7 @@ their phone.
    build. The run summary says "Testers connect Strava with one tap".
 5. **Invite:** App Store Connect → your app → TestFlight → **External Testing
    +**. Add the build, fill in Test Information, and submit it for Beta App
-   Review (usually under a day, first build only). Mention that reviewers can
+   Review (usually under a day; later builds often skip it). Mention that reviewers can
    tap **Explore with demo data** without a Strava account. Then turn on the
    **public link** and send it to your friends.
 
