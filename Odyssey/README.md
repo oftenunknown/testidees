@@ -70,7 +70,8 @@ toggles hide companion names and route art.
 ## Get your own data in
 
 1. Go to [strava.com/settings/api](https://www.strava.com/settings/api) and
-   create an app (any name, any website, category of your choice).
+   create an app (any name, any website, category of your choice). Strava
+   requires a Strava subscription to create one.
 2. Set **Authorization Callback Domain** to `localhost`.
 3. In Odyssey: **Settings → Strava API app**, paste the **Client ID** and
    **Client Secret**, then tap **Connect with Strava**. If the Strava app is
@@ -82,8 +83,9 @@ enter its URL instead.
 
 Good to know:
 
-- New Strava API apps can connect **one athlete** (you) until Strava approves
-  more — fine for testing with your own data.
+- New Strava API apps start in **single-player mode**: only your own account
+  can connect — fine for testing with your own data. Strava's API settings
+  let you raise that to 10 athletes; beyond that, Strava reviews the app.
 - Strava allows **100 reads per 15 minutes and 1,000 a day** per app. Odyssey
   fetches activity lists for the range you're looking at (and the period
   before it, for comparisons), caches them, and then spends a small budget on
